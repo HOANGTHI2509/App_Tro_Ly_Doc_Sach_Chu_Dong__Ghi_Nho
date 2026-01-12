@@ -1,0 +1,22 @@
+name: tram_doc
+description: "Dự án App Trợ Lý Đọc Sách"
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/img/login.jpg  # Đảm bảo đúng đuôi .jpg
