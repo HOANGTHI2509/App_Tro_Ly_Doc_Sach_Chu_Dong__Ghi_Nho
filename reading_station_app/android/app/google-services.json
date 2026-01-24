@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "918758802263",
+    "project_id": "app-tram-doc",
+    "storage_bucket": "app-tram-doc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:918758802263:android:aee1e5d3ed302f6337b412",
+        "android_client_info": {
+          "package_name": "com.example.reading_station_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOmKrccYRQ8RFMeXIIWz2aGxWF6xsEbJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
