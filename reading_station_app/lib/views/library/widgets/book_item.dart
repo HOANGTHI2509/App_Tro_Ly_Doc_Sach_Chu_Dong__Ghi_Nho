@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:reading_station_app/models/book.dart';
-
-import '../reading_screen.dart'; 
-
-enum BookStatus { reading, wishlist, completed }
+import '../../../models/user_book.dart';
+import '../user_book_details_screen.dart'; 
 
 class BookItem extends StatelessWidget {
-  final Book book;
+  final UserBook userBook;
   final BookStatus status;
 
   const BookItem({
     super.key,
-    required this.book,
+    required this.userBook,
     required this.status,
   });
 
@@ -22,7 +19,7 @@ class BookItem extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ReadingScreen(bookTitle: book.title),
+            builder: (context) => UserBookDetailsScreen(userBook: userBook),
           ),
         );
       },
@@ -39,18 +36,25 @@ class BookItem extends StatelessWidget {
           // Book Cover
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: Image.network(
-              book.imageUrl,
-              height: 100,
-              width: 70,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 100,
-                width: 70,
-                color: Colors.grey,
-                child: const Icon(Icons.book, color: Colors.white),
-              ),
-            ),
+            child: userBook.displayImageUrl.isNotEmpty
+              ? Image.network(
+                  userBook.displayImageUrl,
+                  height: 100,
+                  width: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 100,
+                    width: 70,
+                    color: Colors.grey,
+                    child: const Icon(Icons.book, color: Colors.white),
+                  ),
+                )
+              : Container(
+                  height: 100,
+                  width: 70,
+                  color: Colors.grey,
+                  child: const Icon(Icons.book, color: Colors.white),
+                ),
           ),
           const SizedBox(width: 15),
           
@@ -60,7 +64,7 @@ class BookItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  book.title,
+                  userBook.book.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -70,7 +74,7 @@ class BookItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  book.author,
+                  userBook.book.author,
                   style: TextStyle(color: Colors.grey[600], fontSize: 13),
                 ),
                 const SizedBox(height: 10),
@@ -95,7 +99,7 @@ class BookItem extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(5),
           child: LinearProgressIndicator(
-            value: (book.percentage) / 100,
+            value: (userBook.percentage) / 100,
             backgroundColor: const Color(0xFFFFCCBC),
             color: const Color(0xFFFF5722),
             minHeight: 8,
@@ -106,11 +110,11 @@ class BookItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Trang ${book.currentPage}/${book.totalPages}',
+              'Trang ${userBook.readingProgress}/${userBook.book.totalPages ?? '?'}',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             Text(
-              '${book.percentage}%',
+              '${userBook.percentage}%',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ],
@@ -130,13 +134,13 @@ class BookItem extends StatelessWidget {
              borderRadius: BorderRadius.circular(10),
            ),
            child: Text(
-             book.genre ?? 'Chưa phân loại',
+             userBook.book.genre ?? 'Chưa phân loại',
              style: const TextStyle(color: Color(0xFFFF5722), fontSize: 10, fontWeight: FontWeight.bold),
            ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Trang ${book.totalPages}',
+          'Trang ${userBook.book.totalPages ?? '?'}',
           style: TextStyle(color: Colors.grey[600], fontSize: 12),
         ),
       ],
@@ -150,7 +154,7 @@ class BookItem extends StatelessWidget {
         Row(
           children: List.generate(5, (index) {
             return Icon(
-              index < (book.rating ?? 0) ? Icons.star : Icons.star_border,
+              index < (userBook.userRating ?? 0) ? Icons.star : Icons.star_border,
               color: Colors.amber,
               size: 16,
             );
@@ -162,7 +166,7 @@ class BookItem extends StatelessWidget {
             const Icon(Icons.check_circle, color: Colors.green, size: 14),
             const SizedBox(width: 4),
             Text(
-              'Hoàn thành ngày ${_formatDate(book.completedDate)}',
+              'Hoàn thành ngày ${_formatDate(userBook.dateCompleted)}',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ],

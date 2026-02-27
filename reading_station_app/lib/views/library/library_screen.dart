@@ -1,75 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../models/book.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/user_book.dart';
+import '../../providers/library_provider.dart';
 import 'widgets/book_item.dart';
 import 'widgets/expandable_fab.dart';
 
-class LibraryScreen extends StatefulWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProviderStateMixin {
+class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // Mock Data
-  final List<Book> _readingBooks = [
-    Book(
-      id: '1',
-      title: 'Nhà Giả Kim',
-      author: 'Paulo Coelho',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1483412266i/865.jpg',
-      currentPage: 120,
-      totalPages: 283,
-    ),
-    Book(
-      id: '2',
-      title: 'Hành trình về Phương Đông',
-      author: 'Baird Thomas Spalding',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1348392160i/15842750.jpg',
-      currentPage: 133,
-      totalPages: 223,
-    ),
-  ];
-
-  final List<Book> _wishlistBooks = [
-    Book(
-      id: '3',
-      title: 'Thép đã tôi thế đấy',
-      author: 'Nikolai Alekseyevich Ostrovsky',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1348215336l/15808237.jpg',
-      genre: 'Tiểu thuyết',
-      totalPages: 300,
-    ),
-    Book(
-      id: '4',
-      title: 'Đắc nhân tâm',
-      author: 'Dale Carnegie',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1449557612l/4865.jpg',
-      genre: 'Phát triển bản thân',
-      totalPages: 325,
-    ),
-  ];
-
-  final List<Book> _completedBooks = [
-    Book(
-      id: '5',
-      title: 'Trí tuệ người Do Thái',
-      author: 'Jerome Weidman',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1388190013l/20262484.jpg',
-      rating: 4,
-      completedDate: DateTime(2025, 12, 20),
-    ),
-    Book(
-      id: '6',
-      title: 'Hành trình về Phương Đông',
-      author: 'Baird Thomas Spalding',
-      imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1348392160i/15842750.jpg',
-      rating: 5,
-      completedDate: DateTime(2025, 12, 20),
-    ),
-  ];
 
   @override
   void initState() {
@@ -141,9 +85,9 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildBookList(_readingBooks, BookStatus.reading),
-              _buildBookList(_wishlistBooks, BookStatus.wishlist),
-              _buildBookList(_completedBooks, BookStatus.completed),
+              _buildBookList(ref.watch(booksByStatusProvider(BookStatus.reading)), BookStatus.reading),
+              _buildBookList(ref.watch(booksByStatusProvider(BookStatus.wishlist)), BookStatus.wishlist),
+              _buildBookList(ref.watch(booksByStatusProvider(BookStatus.completed)), BookStatus.completed),
             ],
           ),
         ),
@@ -153,12 +97,21 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildBookList(List<Book> books, BookStatus status) {
+  Widget _buildBookList(List<UserBook> userBooks, BookStatus status) {
+    if (userBooks.isEmpty) {
+       return Center(
+         child: Text(
+           'Chưa có sách nào trong danh sách này.',
+           style: TextStyle(color: Colors.grey[600]),
+         ),
+       );
+    }
+    
     return ListView.builder(
       padding: const EdgeInsets.all(20),
-      itemCount: books.length + (status == BookStatus.reading ? 1 : 0), // +1 for hint
+      itemCount: userBooks.length + (status == BookStatus.reading ? 1 : 0), // +1 for hint
       itemBuilder: (context, index) {
-        if (status == BookStatus.reading && index == books.length) {
+        if (status == BookStatus.reading && index == userBooks.length) {
           return Padding(
             padding: const EdgeInsets.only(top: 20),
             child: Row(
@@ -175,7 +128,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         }
         return Padding(
           padding: const EdgeInsets.only(bottom: 15),
-          child: BookItem(book: books[index], status: status),
+          child: BookItem(userBook: userBooks[index], status: status),
         );
       },
     );

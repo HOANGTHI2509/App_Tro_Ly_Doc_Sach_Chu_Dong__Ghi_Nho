@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../scanner/scanner_screen.dart';
+import '../search_book_screen.dart';
 
 class ExpandableFab extends StatefulWidget {
   const ExpandableFab({super.key});
@@ -50,11 +52,27 @@ class _ExpandableFabState extends State<ExpandableFab> with SingleTickerProvider
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (_isExpanded) ...[
-          _buildFabMenuItem('Thêm ghi chú', Icons.description_outlined),
+          _buildFabMenuItem(
+            label: 'Thêm ghi chú', 
+            icon: Icons.description_outlined,
+            onTap: () {},
+          ),
           const SizedBox(height: 10),
-          _buildFabMenuItem('Quét mã Vạch', Icons.qr_code_scanner),
+          _buildFabMenuItem(
+            label: 'Quét mã Vạch', 
+            icon: Icons.qr_code_scanner,
+            onTap: () {
+               Navigator.push(context, MaterialPageRoute(builder: (context) => const ScannerScreen()));
+            }
+          ),
           const SizedBox(height: 10),
-          _buildFabMenuItem('Thêm sách', Icons.book),
+          _buildFabMenuItem(
+            label: 'Thêm sách', 
+            icon: Icons.book,
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchBookScreen()));
+            }
+          ),
           const SizedBox(height: 10),
         ],
         FloatingActionButton(
@@ -67,28 +85,34 @@ class _ExpandableFabState extends State<ExpandableFab> with SingleTickerProvider
     );
   }
 
-  Widget _buildFabMenuItem(String label, IconData icon) {
+  Widget _buildFabMenuItem({required String label, required IconData icon, required VoidCallback onTap}) {
     return ScaleTransition(
       scale: _expandAnimation,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Container(
-             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-             decoration: BoxDecoration(
-               color: Colors.white,
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: [
-                 BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
-               ]
-             ),
-             child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          GestureDetector(
+            onTap: () {
+               _toggle();
+               onTap();
+            },
+            child: Container(
+               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: BorderRadius.circular(20),
+                 boxShadow: [
+                   BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                 ]
+               ),
+               child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
           ),
           const SizedBox(width: 10),
           FloatingActionButton.small(
             onPressed: () {
-               // Handle action
                _toggle();
+               onTap();
             },
             heroTag: label,
             backgroundColor: Colors.white,
