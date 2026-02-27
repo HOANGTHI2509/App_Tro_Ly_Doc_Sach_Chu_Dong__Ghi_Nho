@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:reading_station_app/firebase_options.dart';
-import 'package:reading_station_app/controllers/auth_controller.dart';
-import 'package:reading_station_app/views/auth/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:reading_station_app/views/main_screen.dart';
 
@@ -11,6 +9,16 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Sign in anonymously for testing if not already logged in
+  if (FirebaseAuth.instance.currentUser == null) {
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+    } catch (e) {
+      debugPrint('Error signing in anonymously: $e');
+    }
+  }
+  
   runApp(const MyApp());
 }
 
@@ -27,6 +35,8 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         useMaterial3: false, 
       ),
+      home: const MainScreen(),
+      /*
       home: StreamBuilder<User?>(
         stream: AuthController().authStateChanges,
         builder: (context, snapshot) {
@@ -39,6 +49,7 @@ class MyApp extends StatelessWidget {
           return const LoginScreen();
         },
       ),
+      */
     );
   }
 }
