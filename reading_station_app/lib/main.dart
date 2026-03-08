@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:reading_station_app/firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:reading_station_app/controllers/auth_controller.dart';
 import 'package:reading_station_app/views/auth/login_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
 import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We will keep our MainScreen)
 // The remote imported features/library/library_page.dart, but our MainScreen is likely the current source of truth for navigation.
+import 'package:reading_station_app/views/library/library_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  
+  // Initialize Supabase correctly for Auth and Database
+  await Supabase.initialize(
+    url: 'https://kvechqvsflmmxruikrtt.supabase.co',
+    anonKey: 'sb_publishable_Bn9x0JxeSONUEDX_ItvyJQ__9hwuUMT',
   );
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.dark));
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -61,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
   
   // Danh sách các màn hình (Hiện tại chỉ có Thư viện là thật, các trang khác là placeholder)
   final List<Widget> _pages = [
-    const LibraryPage(),
+    const LibraryScreen(),
     const PlaceholderPage(title: "Ghi Chú"),
     const PlaceholderPage(title: "Ôn Tập"),
     const PlaceholderPage(title: "Cộng Đồng"),

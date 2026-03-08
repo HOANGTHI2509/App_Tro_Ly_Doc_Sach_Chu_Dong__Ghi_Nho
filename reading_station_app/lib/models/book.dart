@@ -1,11 +1,14 @@
 class Book {
   final String id;
   final String title;
-  final String author;
+  final String author; // Kept for backwards compatibility with UI
+  final List<String> authors;
   final String imageUrl;
+  final String description;
   final int? currentPage;
   final int? totalPages;
-  final String? genre;
+  final String? genre; // Kept for backwards compatibility
+  final List<String> categories;
   final DateTime? completedDate;
   final int? rating;
 
@@ -13,10 +16,13 @@ class Book {
     required this.id,
     required this.title,
     required this.author,
+    this.authors = const [],
     required this.imageUrl,
+    this.description = '',
     this.currentPage,
     this.totalPages,
     this.genre,
+    this.categories = const [],
     this.completedDate,
     this.rating,
   });
@@ -33,8 +39,10 @@ class Book {
     
     // Parse authors (can be a list)
     String parsedAuthor = 'Unknown Author';
+    List<String> authorsList = [];
     if (volumeInfo['authors'] != null && (volumeInfo['authors'] as List).isNotEmpty) {
-      parsedAuthor = (volumeInfo['authors'] as List).join(', ');
+      authorsList = List<String>.from(volumeInfo['authors']);
+      parsedAuthor = authorsList.join(', ');
     }
 
     // Parse image
@@ -48,17 +56,24 @@ class Book {
 
     // Parse Categories
     String? parsedGenre;
-     if (volumeInfo['categories'] != null && (volumeInfo['categories'] as List).isNotEmpty) {
-      parsedGenre = (volumeInfo['categories'] as List).first;
+    List<String> categoriesList = [];
+    if (volumeInfo['categories'] != null && (volumeInfo['categories'] as List).isNotEmpty) {
+      categoriesList = List<String>.from(volumeInfo['categories']);
+      parsedGenre = categoriesList.first;
     }
+
+    String parsedDescription = volumeInfo['description'] ?? '';
 
     return Book(
       id: json['id'] ?? '',
       title: volumeInfo['title'] ?? 'Unknown Title',
       author: parsedAuthor,
+      authors: authorsList,
       imageUrl: parsedImageUrl,
+      description: parsedDescription,
       totalPages: volumeInfo['pageCount'],
       genre: parsedGenre,
+      categories: categoriesList,
     );
   }
 
@@ -68,10 +83,13 @@ class Book {
       'id': id,
       'title': title,
       'author': author,
+      'authors': authors,
       'imageUrl': imageUrl,
+      'description': description,
       'currentPage': currentPage,
       'totalPages': totalPages,
       'genre': genre,
+      'categories': categories,
       'completedDate': completedDate?.toIso8601String(),
       'rating': rating,
     };
@@ -82,10 +100,13 @@ class Book {
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       author: json['author'] ?? '',
+      authors: List<String>.from(json['authors'] ?? []),
       imageUrl: json['imageUrl'] ?? '',
+      description: json['description'] ?? '',
       currentPage: json['currentPage'],
       totalPages: json['totalPages'],
       genre: json['genre'],
+      categories: List<String>.from(json['categories'] ?? []),
       completedDate: json['completedDate'] != null ? DateTime.parse(json['completedDate']) : null,
       rating: json['rating'],
     );

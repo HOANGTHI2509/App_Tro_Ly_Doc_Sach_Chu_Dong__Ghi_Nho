@@ -8,8 +8,8 @@ final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
   return LibraryRepository();
 });
 
-// StreamProvider that automatically listens to Firestore and updates the UI
-final userBooksProvider = StreamProvider<List<UserBook>>((ref) {
+// FutureProvider that fetches books once and invalidates on changes
+final userBooksProvider = FutureProvider<List<UserBook>>((ref) async {
   final repository = ref.watch(libraryRepositoryProvider);
   return repository.getUserBooks();
 });
@@ -34,6 +34,7 @@ class LibraryController extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       await ref.read(libraryRepositoryProvider).addBook(userBook);
+      ref.invalidate(userBooksProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -43,6 +44,7 @@ class LibraryController extends AsyncNotifier<void> {
   Future<void> updateBook(UserBook updatedBook) async {
     try {
       await ref.read(libraryRepositoryProvider).updateBook(updatedBook);
+      ref.invalidate(userBooksProvider);
     } catch (e) {
       print('Error updating book: $e');
       rethrow;
@@ -52,7 +54,9 @@ class LibraryController extends AsyncNotifier<void> {
   Future<void> removeBook(String bookId) async {
     try {
       await ref.read(libraryRepositoryProvider).removeBook(bookId);
+      ref.invalidate(userBooksProvider);
     } catch (e) {
+      print('Error removing book: $e');
     }
   }
 }

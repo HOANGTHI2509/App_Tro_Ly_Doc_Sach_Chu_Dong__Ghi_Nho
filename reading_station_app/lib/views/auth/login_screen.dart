@@ -59,13 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 300,
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    // Using a placeholder that looks similar to the reading illustration
-                    image: NetworkImage(
-                        'https://img.freepik.com/free-vector/hand-drawn-flat-design-stack-books-illustration_23-2149341898.jpg?t=st=1737715000~exp=1737718600~hmac=62a6e...'), 
-                        // Note: A real app would use a local asset. Using a placeholder for now.
-                    fit: BoxFit.cover, 
-                  ),
                   color: Color(0xFFFFF3E0), // Fallback light orange bg
                 ),
                 child: Stack(

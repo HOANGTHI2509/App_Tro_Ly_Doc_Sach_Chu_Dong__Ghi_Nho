@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
@@ -46,14 +46,19 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
     if (newProgress > maxPages) newProgress = maxPages;
     if (newProgress < 0) newProgress = 0;
 
-    // Check if status needs to change to completed
+    // Always respect the status the user selected via the chip
     BookStatus newStatus = _currentBook.status;
     DateTime? newCompletedDate = _currentBook.dateCompleted;
-    if (newProgress == maxPages && newStatus != BookStatus.completed) {
+    
+    // Auto-complete ONLY if user hit max pages without manually picking "completed"
+    if (newProgress == maxPages && newProgress > 0 && newStatus != BookStatus.completed) {
       newStatus = BookStatus.completed;
       newCompletedDate = DateTime.now();
-    } else if (newStatus == BookStatus.wishlist && newProgress > 0) {
-      newStatus = BookStatus.reading;
+    }
+
+    // Reset completed date if user moves book away from completed
+    if (newStatus != BookStatus.completed) {
+      newCompletedDate = null;
     }
 
     final updatedBook = _currentBook.copyWith(
@@ -61,6 +66,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
       readingProgress: newProgress,
       status: newStatus,
       dateCompleted: newCompletedDate,
+      clearDateCompleted: newStatus != BookStatus.completed,
     );
 
     try {
@@ -116,12 +122,16 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
 
       setState(() => _isUploadingImage = true);
 
-      // Upload to Firebase Storage
-      final String fileName = 'covers/${_currentBook.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      // Upload to Supabase Storage
+      final String fileName = '${_currentBook.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
-      final uploadTask = await storageRef.putFile(File(image.path));
-      final String downloadUrl = await uploadTask.ref.getDownloadURL();
+      await Supabase.instance.client.storage
+          .from('covers')
+          .upload(fileName, File(image.path));
+          
+      final String downloadUrl = Supabase.instance.client.storage
+          .from('covers')
+          .getPublicUrl(fileName);
 
       // Update current book silently (will be saved to DB when user presses Save)
       setState(() {

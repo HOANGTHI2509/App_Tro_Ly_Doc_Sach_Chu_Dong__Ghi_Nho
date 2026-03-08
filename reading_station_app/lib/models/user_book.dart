@@ -1,10 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'book.dart';
 
 enum BookStatus { reading, wishlist, completed }
 
 class UserBook {
-  final String id; // Document ID in Firestore
+  final String id; // UUID in Supabase
   final Book book;
   final BookStatus status;
   final DateTime dateAdded;
@@ -26,51 +25,67 @@ class UserBook {
     this.customCoverUrl,
   });
 
-  String get displayImageUrl => customCoverUrl ?? book.imageUrl;
+  String get displayImageUrl => customCoverUrl ?? book.imageUrl ?? '';
 
   int get percentage {
     if (book.totalPages == null || book.totalPages == 0) return 0;
     return ((readingProgress / book.totalPages!) * 100).round();
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toSupabase(String userId) {
     return {
-      'book': book.toJson(),
-      'status': status.name,
-      'dateAdded': Timestamp.fromDate(dateAdded),
-      'dateCompleted': dateCompleted != null ? Timestamp.fromDate(dateCompleted!) : null,
-      'userRating': userRating,
-      'readingProgress': readingProgress,
+      if (id.isNotEmpty) 'id': id,
+      'user_id': userId,
+      'book_id': book.id,
+      'title': book.title,
+      'authors': book.authors,
+      'image_url': book.imageUrl,
+      'custom_cover_url': customCoverUrl,
+      'page_count': book.totalPages,
+      'categories': book.categories,
+      // Map Dart enum handling
+      'status': status == BookStatus.wishlist ? 'Want to read' : (status == BookStatus.reading ? 'Reading' : 'Completed'),
+      'current_page': readingProgress,
+      'rating': userRating,
       'notes': notes,
-      'customCoverUrl': customCoverUrl,
+      'date_completed': dateCompleted?.toIso8601String(),
     };
   }
 
-  factory UserBook.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    
-    // Parse status string to enum
+  factory UserBook.fromSupabase(Map<String, dynamic> data) {
     BookStatus parsedStatus = BookStatus.wishlist;
-    try {
-      parsedStatus = BookStatus.values.firstWhere((e) => e.name == data['status']);
-    } catch (_) {}
+    if (data['status'] == 'Reading') {
+      parsedStatus = BookStatus.reading;
+    } else if (data['status'] == 'Completed') {
+      parsedStatus = BookStatus.completed;
+    }
 
     return UserBook(
-      id: doc.id,
-      book: Book.fromFirestore(data['book'] ?? {}),
+      id: data['id'],
+      book: Book(
+        id: data['book_id'] ?? '',
+        title: data['title'] ?? '',
+        author: List<String>.from(data['authors'] ?? []).join(', '), // Added missing parameter
+        authors: List<String>.from(data['authors'] ?? []),
+        imageUrl: data['image_url'],
+        totalPages: data['page_count'],
+        categories: List<String>.from(data['categories'] ?? []),
+        description: '', // Can be loaded if joined with books table, but we keep it simple here.
+      ),
       status: parsedStatus,
-      dateAdded: (data['dateAdded'] as Timestamp).toDate(),
-      dateCompleted: data['dateCompleted'] != null ? (data['dateCompleted'] as Timestamp).toDate() : null,
-      userRating: data['userRating'],
-      readingProgress: data['readingProgress'] ?? 0,
+      dateAdded: DateTime.parse(data['date_added']),
+      dateCompleted: data['date_completed'] != null ? DateTime.parse(data['date_completed']) : null,
+      userRating: data['rating'],
+      readingProgress: data['current_page'] ?? 0,
       notes: data['notes'],
-      customCoverUrl: data['customCoverUrl'],
+      customCoverUrl: data['custom_cover_url'],
     );
   }
 
   UserBook copyWith({
     BookStatus? status,
     DateTime? dateCompleted,
+    bool clearDateCompleted = false,
     int? userRating,
     int? readingProgress,
     String? notes,
@@ -81,7 +96,7 @@ class UserBook {
       book: book,
       status: status ?? this.status,
       dateAdded: dateAdded,
-      dateCompleted: dateCompleted ?? this.dateCompleted,
+      dateCompleted: clearDateCompleted ? null : (dateCompleted ?? this.dateCompleted),
       userRating: userRating ?? this.userRating,
       readingProgress: readingProgress ?? this.readingProgress,
       notes: notes ?? this.notes,

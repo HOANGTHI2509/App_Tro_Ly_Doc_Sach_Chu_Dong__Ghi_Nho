@@ -1,44 +1,177 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'book_details_screen.dart';
 import '../../../models/book.dart';
 import '../../../services/api_service.dart';
-import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
 
-final searchApiProvider = Provider((ref) => ApiService());
+// --- Search State ---
+class SearchState {
+  final List<Book> books;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasReachedMax;
+  final String query;
+  final String? error;
 
-class SearchQueryNotifier extends Notifier<String> {
-  @override
-  String build() => '';
+  const SearchState({
+    this.books = const [],
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasReachedMax = false,
+    this.query = '',
+    this.error,
+  });
 
-  void updateQuery(String value) {
-    state = value;
+  SearchState copyWith({
+    List<Book>? books,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasReachedMax,
+    String? query,
+    String? error,
+    bool clearError = false,
+  }) {
+    return SearchState(
+      books: books ?? this.books,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      query: query ?? this.query,
+      error: clearError ? null : error ?? this.error,
+    );
   }
 }
 
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
+// --- Notifier ---
+final searchApiProvider = Provider<ApiService>((ref) => ApiService());
 
-final searchResultsProvider = FutureProvider<List<Book>>((ref) async {
-  final query = ref.watch(searchQueryProvider);
-  if (query.isEmpty) return [];
+class SearchBooksNotifier extends Notifier<SearchState> {
+  Timer? _debounce;
 
-  final api = ref.watch(searchApiProvider);
-  return api.searchBooks(query);
-});
+  @override
+  SearchState build() {
+    ref.onDispose(() {
+      _debounce?.cancel();
+    });
+    return const SearchState();
+  }
 
-class SearchBookScreen extends ConsumerWidget {
+  void onChangeQuery(String query) {
+    if (query == state.query) return;
+
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    if (query.isEmpty) {
+      state = const SearchState();
+      return;
+    }
+
+    state = state.copyWith(query: query, isLoading: true, clearError: true, books: []);
+
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      _searchInitial(query);
+    });
+  }
+
+  Future<void> _searchInitial(String query) async {
+    try {
+      final api = ref.read(searchApiProvider);
+      final books = await api.searchBooks(query, startIndex: 0);
+      state = SearchState(
+        books: books,
+        query: query,
+        hasReachedMax: books.length < 10,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = SearchState(query: query, error: e.toString());
+    }
+  }
+
+  Future<void> fetchMore() async {
+    if (state.isLoadingMore || state.hasReachedMax || state.query.isEmpty || state.isLoading) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingMore: true);
+
+    try {
+      final api = ref.read(searchApiProvider);
+      final newBooks = await api.searchBooks(
+        state.query,
+        startIndex: state.books.length,
+      );
+
+      if (newBooks.isEmpty) {
+        state = state.copyWith(isLoadingMore: false, hasReachedMax: true);
+      } else {
+        state = state.copyWith(
+          books: [...state.books, ...newBooks],
+          isLoadingMore: false,
+          hasReachedMax: newBooks.length < 10,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(isLoadingMore: false);
+    }
+  }
+}
+
+final searchBooksProvider = NotifierProvider<SearchBooksNotifier, SearchState>(
+  SearchBooksNotifier.new,
+);
+
+// --- UI ---
+class SearchBookScreen extends ConsumerStatefulWidget {
   const SearchBookScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final searchController = TextEditingController(text: ref.read(searchQueryProvider));
-    final resultsAsyncValue = ref.watch(searchResultsProvider);
+  ConsumerState<SearchBookScreen> createState() => _SearchBookScreenState();
+}
+
+class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final query = ref.read(searchBooksProvider).query;
+      if (query.isNotEmpty) {
+        _searchController.text = query;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(searchBooksProvider.notifier).fetchMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(searchBooksProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Tìm kiếm sách', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
+        title: const Text(
+          'Tìm kiếm sách',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
+        ),
         backgroundColor: const Color(0xFFF8F9FA),
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
@@ -53,11 +186,18 @@ class SearchBookScreen extends ConsumerWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                ]
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: TextField(
-                controller: searchController,
+                controller: _searchController,
+                onChanged: (value) {
+                  ref.read(searchBooksProvider.notifier).onChangeQuery(value);
+                },
                 decoration: InputDecoration(
                   hintText: 'Nhập tên sách, tác giả...',
                   hintStyle: TextStyle(color: Colors.grey[400]),
@@ -65,70 +205,104 @@ class SearchBookScreen extends ConsumerWidget {
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.arrow_forward, color: Color(0xFFFF5722)),
+                    icon: const Icon(Icons.clear, color: Colors.grey),
                     onPressed: () {
-                       ref.read(searchQueryProvider.notifier).updateQuery(searchController.text);
-                       FocusScope.of(context).unfocus();
+                      _searchController.clear();
+                      ref.read(searchBooksProvider.notifier).onChangeQuery('');
+                      FocusScope.of(context).unfocus();
                     },
-                  )
+                  ),
                 ),
                 onSubmitted: (value) {
-                  ref.read(searchQueryProvider.notifier).updateQuery(value);
+                  ref.read(searchBooksProvider.notifier).onChangeQuery(value);
                 },
               ),
             ),
           ),
           const SizedBox(height: 10),
-          Expanded(
-            child: resultsAsyncValue.when(
-              data: (books) {
-                if (books.isEmpty && ref.watch(searchQueryProvider).isNotEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text('Không tìm thấy sách nào.', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-                      ],
-                    ),
-                  );
-                }
-                if (books.isEmpty) {
-                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.menu_book_outlined, size: 60, color: Colors.grey[300]),
-                        const SizedBox(height: 16),
-                        Text('Tìm sách để thêm vào thư viện', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
-                      ],
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  itemCount: books.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 15),
-                  itemBuilder: (context, index) {
-                    final book = books[index];
-                    return _buildSearchResultItem(context, ref, book);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFFF5722))),
-              error: (err, stack) => Center(child: Text('Đã có lỗi xảy ra: $err', style: const TextStyle(color: Colors.red))),
-            ),
-          )
+          Expanded(child: _buildBody(state)),
         ],
       ),
     );
   }
 
-  Widget _buildSearchResultItem(BuildContext context, WidgetRef ref, Book book) {
+  Widget _buildBody(SearchState state) {
+    if (state.query.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.menu_book_outlined, size: 60, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Tìm sách để thêm vào thư viện',
+              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFFF5722)));
+    }
+
+    if (state.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Không thể tải dữ liệu. Thử lại sau.',
+              style: TextStyle(color: Colors.grey[600], fontSize: 15),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.books.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Không tìm thấy sách nào.',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: state.books.length + (state.isLoadingMore ? 1 : 0),
+      separatorBuilder: (context, index) => const SizedBox(height: 15),
+      itemBuilder: (context, index) {
+        if (index == state.books.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator(color: Color(0xFFFF5722))),
+          );
+        }
+        return _buildBookItem(state.books[index]);
+      },
+    );
+  }
+
+  Widget _buildBookItem(Book book) {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => BookDetailsScreen(book: book)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BookDetailsScreen(book: book)),
+        );
       },
       borderRadius: BorderRadius.circular(15),
       child: Container(
@@ -136,52 +310,84 @@ class SearchBookScreen extends ConsumerWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
-             BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
-          ]
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             ClipRRect(
+            ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: book.imageUrl.isNotEmpty
-                ? Image.network(book.imageUrl, width: 65, height: 95, fit: BoxFit.cover, errorBuilder: (_,__,___) => _defaultCover())
-                : _defaultCover(),
+                  ? Image.network(
+                      book.imageUrl,
+                      width: 65,
+                      height: 95,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _defaultCover(),
+                    )
+                  : _defaultCover(),
             ),
             const SizedBox(width: 15),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    book.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 6),
-                  Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  Text(
+                    book.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
                   if (book.genre != null) ...[
-                     const SizedBox(height: 8),
-                     Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                       decoration: BoxDecoration(color: const Color(0xFFFFEBE5), borderRadius: BorderRadius.circular(8)),
-                       child: Text(book.genre!, style: const TextStyle(color: Color(0xFFFF5722), fontSize: 10, fontWeight: FontWeight.bold)),
-                     )
-                  ]
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEBE5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        book.genre!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF5722),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              )
+              ),
             ),
             const Padding(
               padding: EdgeInsets.only(top: 30.0),
               child: Icon(Icons.arrow_forward_ios, color: Colors.black26, size: 16),
             ),
           ],
-        )
+        ),
       ),
     );
   }
 
   Widget _defaultCover() {
     return Container(
-      width: 65, height: 95, color: Colors.grey[200],
-      child: Icon(Icons.book, color: Colors.grey[400])
+      width: 65,
+      height: 95,
+      color: Colors.grey[200],
+      child: Icon(Icons.book, color: Colors.grey[400]),
     );
   }
 }

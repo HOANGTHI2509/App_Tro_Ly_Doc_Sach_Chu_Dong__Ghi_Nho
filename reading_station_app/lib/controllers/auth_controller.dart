@@ -1,10 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthController {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoTrueClient _auth = Supabase.instance.client.auth;
 
   // Stream to listen to authentication state changes
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth.onAuthStateChange.map((event) => event.session?.user);
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -12,11 +12,11 @@ class AuthController {
   // Sign in with email and password
   Future<void> signIn({required String email, required String password}) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      await _auth.signInWithPassword(
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
       throw 'Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.';
@@ -30,18 +30,26 @@ class AuthController {
     required String name,
   }) async {
     try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      final res = await _auth.signUp(
         email: email,
         password: password,
+        data: {'name': name},
       );
 
-      // Update display name
-      if (userCredential.user != null) {
-        await userCredential.user!.updateDisplayName(name);
-        await userCredential.user!.reload();
+      // Insert user profile into public.users table
+      if (res.user != null) {
+        try {
+          await Supabase.instance.client.from('users').insert({
+            'id': res.user!.id,
+            'email': email,
+            'name': name,
+          });
+        } catch (e) {
+          // Ignore error if row already exists or RLS blocks it initially
+          print('Lỗi tạo user info profile: $e');
+        }
       }
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
       throw 'Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.';
@@ -53,23 +61,16 @@ class AuthController {
     await _auth.signOut();
   }
 
-  // Helper to handle Firebase Auth messages in Vietnamese
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'Không tìm thấy tài khoản với email này.';
-      case 'wrong-password':
-        return 'Mật khẩu không chính xác.';
-      case 'email-already-in-use':
-        return 'Email này đã được sử dụng bởi tài khoản khác.';
-      case 'invalid-email':
-        return 'Địa chỉ email không hợp lệ.';
-      case 'weak-password':
-        return 'Mật khẩu quá yếu.';
-      case 'operation-not-allowed':
-        return 'Đăng nhập bằng Email/Mật khẩu chưa được bật.';
-      default:
-        return 'Đã xảy ra lỗi: ${e.message}';
+  // Helper to handle Supabase Auth messages in Vietnamese
+  String _handleAuthException(AuthException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('invalid login credentials')) {
+      return 'Email hoặc mật khẩu không chính xác.';
+    } else if (msg.contains('already registered')) {
+      return 'Email này đã được sử dụng bởi tài khoản khác.';
+    } else if (msg.contains('password')) {
+      return 'Mật khẩu không đáp ứng yêu cầu an toàn.';
     }
+    return 'Đã xảy ra lỗi: ${e.message}';
   }
 }
