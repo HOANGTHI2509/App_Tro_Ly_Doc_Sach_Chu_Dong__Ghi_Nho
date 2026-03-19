@@ -44,17 +44,17 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF000000)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Thêm vào Vòng tròn',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF000000), fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -72,7 +72,7 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Tìm theo tên hoặc email...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF9E9E9E)),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.send, color: Color(0xFFFF5722)),
                   onPressed: _search,
@@ -110,7 +110,7 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
                         backgroundColor: const Color(0xFFFA6400),
                         child: Text(
                           (user['name'] ?? '?')[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                          style: const TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.bold, fontSize: 18),
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -119,7 +119,7 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(user['name'] ?? 'Người dùng', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            Text(user['email'] ?? '', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                            Text(user['email'] ?? '', style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                           ],
                         ),
                       ),
@@ -127,10 +127,10 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: const Color(0xFFEEEEEE),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text('Đã gửi', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: const Text('Đã gửi', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 12, fontWeight: FontWeight.bold)),
                         )
                       else
                         ElevatedButton(
@@ -149,7 +149,7 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
                             } catch (e) {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+                                  SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFF44336)),
                                 );
                               }
                             }
@@ -160,7 +160,7 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
                             minimumSize: const Size(80, 32),
                             elevation: 0,
                           ),
-                          child: const Text('Kết bạn', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: const Text('Kết bạn', style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                     ],
                   ),
@@ -168,27 +168,27 @@ class _AddFriendScreenState extends ConsumerState<AddFriendScreen> {
               }),
             ] else if (_searchController.text.isNotEmpty) ...[
               const SizedBox(height: 40),
-              Center(
+              const Center(
                 child: Column(
                   children: [
-                    Icon(Icons.person_search, size: 64, color: Colors.grey[300]),
-                    const SizedBox(height: 16),
-                    Text('Không tìm thấy người dùng', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text('Thử tìm với email hoặc tên khác', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                    Icon(Icons.person_search, size: 64, color: Color(0xFFE0E0E0)),
+                    SizedBox(height: 16),
+                    Text('Không tìm thấy người dùng', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 16)),
+                    SizedBox(height: 8),
+                    Text('Thử tìm với email hoặc tên khác', style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 14)),
                   ],
                 ),
               ),
             ] else ...[
               const SizedBox(height: 40),
-              Center(
+              const Center(
                 child: Column(
                   children: [
-                    Icon(Icons.group_add, size: 64, color: Colors.grey[300]),
-                    const SizedBox(height: 16),
-                    Text('Tìm bạn bè', style: TextStyle(color: Colors.grey[500], fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text('Nhập tên hoặc email để tìm kiếm', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                    Icon(Icons.group_add, size: 64, color: Color(0xFFE0E0E0)),
+                    SizedBox(height: 16),
+                    Text('Tìm bạn bè', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 16, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text('Nhập tên hoặc email để tìm kiếm', style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 14)),
                   ],
                 ),
               ),

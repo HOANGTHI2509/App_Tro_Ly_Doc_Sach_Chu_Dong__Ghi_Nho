@@ -31,6 +31,11 @@ final friendRecommendationsProvider = FutureProvider<List<Map<String, dynamic>>>
   return ref.watch(activityRepositoryProvider).getFriendRecommendations();
 });
 
+/// Gợi ý kết bạn (người dùng mới/ngẫu nhiên chưa kết bạn)
+final suggestedFriendsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return ref.watch(friendshipRepositoryProvider).getSuggestedFriends();
+});
+
 /// Kết quả search user
 final searchUsersProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, query) async {
   if (query.isEmpty) return [];
@@ -47,6 +52,7 @@ class CommunityController extends AsyncNotifier<void> {
       await ref.read(friendshipRepositoryProvider).sendFriendRequest(friendId);
       ref.invalidate(friendsProvider);
       ref.invalidate(pendingRequestsProvider);
+      ref.invalidate(suggestedFriendsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -59,8 +65,27 @@ class CommunityController extends AsyncNotifier<void> {
       ref.invalidate(friendsProvider);
       ref.invalidate(pendingRequestsProvider);
       ref.invalidate(feedProvider);
+      ref.invalidate(suggestedFriendsProvider);
     } catch (e) {
       print('Error accepting request: $e');
+    }
+  }
+
+  Future<void> likeActivity(String activityId) async {
+    try {
+      await ref.read(activityRepositoryProvider).likeActivity(activityId);
+      ref.invalidate(feedProvider);
+    } catch (e) {
+      print('Error liking activity: $e');
+    }
+  }
+
+  Future<void> commentOnActivity(String activityId, String content) async {
+    try {
+      await ref.read(activityRepositoryProvider).commentOnActivity(activityId, content);
+      ref.invalidate(feedProvider);
+    } catch (e) {
+      print('Error commenting: $e');
     }
   }
 

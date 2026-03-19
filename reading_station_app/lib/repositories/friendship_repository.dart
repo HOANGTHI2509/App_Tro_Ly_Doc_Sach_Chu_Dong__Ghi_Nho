@@ -153,4 +153,35 @@ class FriendshipRepository {
       return [];
     }
   }
+
+  /// Lấy danh sách người dùng gợi ý (không phải tôi và chưa kết bạn/chờ)
+  Future<List<Map<String, dynamic>>> getSuggestedFriends() async {
+    try {
+      final userId = _userId;
+
+      // 1. Lấy tất cả IDs bận rộn (đã kết bạn hoặc đang chờ)
+      final friendships = await _client
+          .from('friendships')
+          .select('user_id, friend_id')
+          .or('user_id.eq.$userId,friend_id.eq.$userId');
+
+      final busyIds = <String>{userId};
+      for (final f in friendships) {
+        busyIds.add(f['user_id'] as String);
+        busyIds.add(f['friend_id'] as String);
+      }
+
+      // 2. Lấy danh sách users không nằm trong busyIds
+      final data = await _client
+          .from('users')
+          .select()
+          .not('id', 'in', '(${busyIds.join(',')})')
+          .limit(10);
+
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      print('Error getting suggested friends: $e');
+      return [];
+    }
+  }
 }

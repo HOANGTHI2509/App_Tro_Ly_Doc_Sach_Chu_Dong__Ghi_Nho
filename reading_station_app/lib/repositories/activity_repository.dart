@@ -187,4 +187,70 @@ class ActivityRepository {
       return [];
     }
   }
+
+  /// Like một hoạt động (Ghi nhận vào bảng activity_likes và cập nhật counters)
+  Future<void> likeActivity(String activityId) async {
+    try {
+      final userId = _userId;
+      
+      // 1. Thêm vào bảng chi tiết (Sử dụng upsert để tránh trùng lặp)
+      try {
+        await _client.from('activity_likes').upsert({
+          'activity_id': activityId,
+          'user_id': userId,
+        });
+      } catch (e) {
+        // Có thể bảng chưa tồn tại, ta chỉ tiếp tục cập nhật counter
+        print('[ActivityRepo] Detail likes table skip: $e');
+      }
+
+      // 2. Cập nhật số lượng tổng ở bảng chính
+      final response = await _client
+          .from('activities')
+          .select('likes')
+          .eq('id', activityId)
+          .single();
+      final currentLikes = response['likes'] ?? 0;
+      await _client
+          .from('activities')
+          .update({'likes': currentLikes + 1})
+          .eq('id', activityId);
+    } catch (e) {
+      print('[ActivityRepo] Error liking activity: $e');
+      rethrow;
+    }
+  }
+
+  /// Bình luận vào một hoạt động (Lưu vào activity_comments và cập nhật counters)
+  Future<void> commentOnActivity(String activityId, String content) async {
+    try {
+      final userId = _userId;
+
+      // 1. Lưu bình luận chi tiết
+      try {
+        await _client.from('activity_comments').insert({
+          'activity_id': activityId,
+          'user_id': userId,
+          'content': content,
+        });
+      } catch (e) {
+        print('[ActivityRepo] Detail comments table skip: $e');
+      }
+
+      // 2. Cập nhật counter
+      final response = await _client
+          .from('activities')
+          .select('comments')
+          .eq('id', activityId)
+          .single();
+      final currentComments = response['comments'] ?? 0;
+      await _client
+          .from('activities')
+          .update({'comments': currentComments + 1})
+          .eq('id', activityId);
+    } catch (e) {
+      print('[ActivityRepo] Error commenting on activity: $e');
+      rethrow;
+    }
+  }
 }

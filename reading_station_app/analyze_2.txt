@@ -1,0 +1,163 @@
+﻿Analyzing reading_station_app...                                
+
+   info - Don't invoke 'print' in production code - generate_structure.dart:4:3 - avoid_print
+   info - Don't invoke 'print' in production code - generate_structure.dart:15:5 - avoid_print
+   info - Don't invoke 'print' in production code - generate_structure.dart:199:3 - avoid_print
+   info - Don't invoke 'print' in production code - lib\controllers\auth_controller.dart:49:11 - avoid_print
+warning - Unused import: '../../models/book_model.dart' - lib\features\library\library_page.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\library\library_page.dart:109:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\library\library_page.dart:181:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\library\widgets\book_card.dart:17:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\library\widgets\book_card.dart:66:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\library\widgets\book_card.dart:91:44 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\features\library\widgets\book_card.dart:94:76 - unnecessary_const
+warning - Unused import: 'package:reading_station_app/views/library/library_screen.dart' - lib\main.dart:10:8 - unused_import
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\models\note.dart:1:8 - unused_import
+warning - Dead code - lib\models\user_book.dart:28:65 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\models\user_book.dart:28:68 - dead_null_aware_expression
+   info - Don't invoke 'print' in production code - lib\providers\community_provider.dart:70:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\community_provider.dart:79:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\community_provider.dart:88:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\community_provider.dart:97:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\community_provider.dart:123:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\flashcard_provider.dart:75:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\flashcard_provider.dart:87:7 - avoid_print
+   info - Unnecessary use of multiple underscores - lib\providers\library_provider.dart:25:16 - unnecessary_underscores
+   info - Don't invoke 'print' in production code - lib\providers\library_provider.dart:71:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\library_provider.dart:81:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\providers\note_provider.dart:81:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:33:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:35:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:66:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:69:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:94:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:106:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:118:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:121:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:186:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:205:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\activity_repository.dart:224:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\flashcard_repository.dart:23:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\flashcard_repository.dart:40:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\flashcard_repository.dart:50:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\flashcard_repository.dart:66:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\flashcard_repository.dart:76:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:23:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:37:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:50:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:60:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:117:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:126:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:134:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:135:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:140:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:142:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:149:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:152:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\friendship_repository.dart:183:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:19:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:27:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:34:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:35:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:39:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:42:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:43:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:65:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:73:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:76:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:78:8 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\library_repository.dart:88:8 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\note_repository.dart:28:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\note_repository.dart:47:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\note_repository.dart:57:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\note_repository.dart:69:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\note_repository.dart:81:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:24:16 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:30:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:34:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:51:14 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:56:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:60:7 - avoid_print
+warning - Unused import: 'login_screen.dart' - lib\views\auth\register_screen.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\add_friend_screen.dart:81:52 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\views\community\add_friend_screen.dart:142:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\views\community\add_friend_screen.dart:151:54 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:65:28 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\community_screen.dart:112:172 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\community_screen.dart:112:204 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:197:144 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:197:148 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:209:28 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\community_screen.dart:215:90 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:240:22 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:281:155 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:281:159 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:305:153 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\community_screen.dart:305:157 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\community_screen.dart:331:59 - deprecated_member_use
+   info - Unnecessary braces in a string interpolation - lib\views\community\community_screen.dart:331:141 - unnecessary_brace_in_string_interps
+  error - Undefined name 'ref' - lib\views\community\community_screen.dart:351:34 - undefined_identifier
+  error - Undefined name 'context' - lib\views\community\community_screen.dart:360:53 - undefined_identifier
+  error - Undefined name 'ref' - lib\views\community\community_screen.dart:360:62 - undefined_identifier
+warning - The value of the field '_cardBg' isn't used - lib\views\community\friends_management_screen.dart:11:15 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\friends_management_screen.dart:122:53 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\community\friends_management_screen.dart:135:26 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\community\friends_management_screen.dart:238:24 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\friends_management_screen.dart:253:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\community\friends_management_screen.dart:268:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\book_details_screen.dart:68:51 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\library\book_details_screen.dart:74:113 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\library\book_details_screen.dart:74:116 - unnecessary_underscores
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\views\library\book_details_screen.dart:171:60 - invalid_null_aware_operator
+warning - Unused import: '../../../models/book.dart' - lib\views\library\scanner\scanner_screen.dart:6:8 - unused_import
+warning - Unused import: '../../../models/user_book.dart' - lib\views\library\scanner\scanner_screen.dart:7:8 - unused_import
+warning - Unused import: '../../../providers/library_provider.dart' - lib\views\library\scanner\scanner_screen.dart:8:8 - unused_import
+warning - Unused import: '../../../providers/library_provider.dart' - lib\views\library\search_book_screen.dart:7:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\search_book_screen.dart:209:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\search_book_screen.dart:333:35 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\views\library\search_book_screen.dart:352:25 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\user_book_details_screen.dart:299:75 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\library\user_book_details_screen.dart:304:141 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\library\user_book_details_screen.dart:304:144 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\user_book_details_screen.dart:413:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\user_book_details_screen.dart:448:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\user_book_details_screen.dart:527:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\widgets\book_item.dart:39:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\widgets\book_item.dart:66:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\library\widgets\expandable_fab.dart:105:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\main_screen.dart:63:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\main_screen.dart:118:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\notes\add_note_screen.dart:310:37 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\notes\add_note_screen.dart:370:124 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\notes\add_note_screen.dart:370:127 - unnecessary_underscores
+warning - The value of the field '_primaryOrange' isn't used - lib\views\notes\note_details_screen.dart:16:15 - unused_field
+   info - Unnecessary use of multiple underscores - lib\views\notes\note_details_screen.dart:92:129 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\views\notes\note_details_screen.dart:92:132 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\notes\note_details_screen.dart:157:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\notes\note_details_screen.dart:196:59 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\views\notes\notes_screen.dart:80:99 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\notes\notes_screen.dart:175:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\profile\help_screen.dart:107:57 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\views\profile\notification_settings_screen.dart:129:15 - deprecated_member_use
+warning - Unused import: '../auth/login_screen.dart' - lib\views\profile\profile_screen.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\review\flashcard_review_screen.dart:294:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\review\flashcard_review_screen.dart:299:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\review\flashcard_review_screen.dart:307:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\review\flashcard_review_screen.dart:336:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\review\review_screen.dart:67:53 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\views\review\review_screen.dart:125:28 - unnecessary_underscores
+   info - Don't invoke 'print' in production code - test_api.dart:7:3 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:10:5 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:13:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:16:9 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:19:11 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:22:9 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:25:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_api.dart:28:5 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:18:11 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:19:11 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:21:13 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:23:11 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:27:7 - avoid_print
+   info - Don't invoke 'print' in production code - tmp_diag.dart:30:5 - avoid_print
+
