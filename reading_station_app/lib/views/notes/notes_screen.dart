@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/note.dart';
 import '../../../providers/note_provider.dart';
+import '../../../providers/flashcard_provider.dart';
 import 'add_note_screen.dart';
 import 'note_details_screen.dart';
 
@@ -213,20 +214,104 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Icon(Icons.bolt, color: _primaryOrange, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Tạo FlashCard',
-                  style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const Spacer(),
-                const Icon(Icons.more_vert, color: Colors.grey, size: 20),
-              ],
-            )
+            InkWell(
+              onTap: () => _createFlashcard(note),
+              child: Row(
+                children: [
+                  Icon(Icons.bolt, color: _primaryOrange, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tạo FlashCard',
+                    style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _createFlashcard(Note note) {
+    final frontController = TextEditingController(text: note.content);
+    final backController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Tạo Flashcard', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Mặt trước (Câu hỏi/Trích dẫn):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: frontController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'VD: Định luật 80/20 là gì?',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Mặt sau (Đáp án/Giải thích):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: backController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'VD: 80% kết quả đến từ 20% nỗ lực...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (frontController.text.trim().isEmpty || backController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Vui lòng nhập cả 2 mặt thẻ!')),
+                );
+                return;
+              }
+              await ref.read(flashcardControllerProvider.notifier).createFromNote(
+                    noteId: note.id,
+                    front: frontController.text.trim(),
+                    back: backController.text.trim(),
+                  );
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Đã tạo Flashcard! Vào tab Ôn tập để học nhé.'),
+                    backgroundColor: Color(0xFF4CAF50),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFA6400),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Tạo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

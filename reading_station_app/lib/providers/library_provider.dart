@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_book.dart';
 import '../repositories/library_repository.dart';
+import 'community_provider.dart';
 
 // Provider for the repository
 final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
@@ -35,6 +36,16 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).addBook(userBook);
       ref.invalidate(userBooksProvider);
+      
+      // Tạo activity khi thêm sách
+      final actType = userBook.status == BookStatus.reading ? 'started_reading' : 'added_book';
+      ref.read(communityControllerProvider.notifier).postActivity(
+        type: actType,
+        bookTitle: userBook.book.title,
+        bookImageUrl: userBook.book.imageUrl,
+        bookAuthor: userBook.book.author,
+      );
+      
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -45,6 +56,17 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).updateBook(updatedBook);
       ref.invalidate(userBooksProvider);
+      
+      // Tạo activity khi đọc xong sách
+      if (updatedBook.status == BookStatus.completed) {
+        ref.read(communityControllerProvider.notifier).postActivity(
+          type: 'finished_book',
+          bookTitle: updatedBook.book.title,
+          bookImageUrl: updatedBook.book.imageUrl,
+          bookAuthor: updatedBook.book.author,
+          rating: updatedBook.userRating,
+        );
+      }
     } catch (e) {
       print('Error updating book: $e');
       rethrow;

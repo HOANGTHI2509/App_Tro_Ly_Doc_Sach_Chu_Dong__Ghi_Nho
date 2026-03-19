@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/note.dart';
 import '../repositories/note_repository.dart';
 import 'package:uuid/uuid.dart';
+import 'community_provider.dart';
 
 // Provider for the repository
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
@@ -45,6 +46,13 @@ class NoteController extends AsyncNotifier<void> {
       // Invalidate both lists
       ref.invalidate(allNotesProvider);
       ref.invalidate(bookNotesProvider(userBookId));
+      
+      // Tạo activity khi ghi chú
+      ref.read(communityControllerProvider.notifier).postActivity(
+        type: 'created_note',
+        noteContent: content.length > 100 ? '${content.substring(0, 100)}...' : content,
+        notePage: pageNumber,
+      );
       
       state = const AsyncData(null);
     } catch (e, st) {

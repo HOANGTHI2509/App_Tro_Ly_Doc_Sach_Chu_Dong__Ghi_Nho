@@ -14,8 +14,8 @@ void main() async {
   
   // Initialize Supabase correctly for Auth and Database
   await Supabase.initialize(
-    url: 'https://kvechqvsflmmxruikrtt.supabase.co',
-    anonKey: 'sb_publishable_Bn9x0JxeSONUEDX_ItvyJQ__9hwuUMT',
+    url: 'https://uauixrhtykxsxdzqyxkk.supabase.co',
+    anonKey: 'sb_publishable_YumQQKtiw2Ia6HHlhPY4Xg_7kvnQ09T',
   );
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.dark));

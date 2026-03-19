@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
 import '../../../providers/note_provider.dart';
@@ -14,9 +15,11 @@ class AddNoteScreen extends ConsumerStatefulWidget {
 class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   UserBook? _selectedBook;
   final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _pageController = TextEditingController();
   final Color _primaryOrange = const Color(0xFFFA6400);
   String _selectedTag = 'Trích dẫn';
   int _wordCount = 0;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   void dispose() {
     _contentController.removeListener(_updateWordCount);
     _contentController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -53,10 +57,12 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     }
 
     try {
+      final pageNum = _pageController.text.isNotEmpty ? int.tryParse(_pageController.text) : null;
       await ref.read(noteControllerProvider.notifier).addNote(
             _selectedBook!.id,
             _contentController.text.trim(),
-            // Có thể thêm tag vào content hoặc xử lý riêng nếu Note model hỗ trợ
+            pageNumber: pageNum,
+            isKeyTakeaway: _selectedTag == 'Ý chính',
           );
       if (mounted) {
         Navigator.pop(context);
@@ -182,16 +188,45 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             
             const SizedBox(height: 24),
 
-            // Nút OCR
+            // Nhập số trang
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.bookmark_outline, color: _primaryOrange, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _pageController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        hintText: 'Số trang (VD: 150)',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Nút OCR
+            SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: _pickImageForOCR,
                 icon: const Icon(Icons.camera_alt, color: Color(0xFF2C3E35)),
-                label: const Text('OCR / Quét văn bản', style: TextStyle(color: Color(0xFF2C3E35), fontWeight: FontWeight.bold)),
+                label: const Text('OCR / Chụp ảnh văn bản', style: TextStyle(color: Color(0xFF2C3E35), fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFDE8B3), // Màu vàng cam nhạt như ảnh
+                  backgroundColor: const Color(0xFFFDE8B3),
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -227,6 +262,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                 _buildTagChip('Cảm nhận', const Color(0xFF4F6F52)),
                 const SizedBox(width: 8),
                 _buildTagChip('Trích dẫn', const Color(0xFF8B7E55)),
+                const SizedBox(width: 8),
+                _buildTagChip('Ý chính', const Color(0xFFE65100)),
                 const SizedBox(width: 8),
                 _buildTagChip('Câu hỏi', const Color(0xFF6B7280)),
               ],
@@ -283,6 +320,33 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickImageForOCR() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: ImageSource.camera);
+      if (image == null) return;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📷 Ảnh đã chụp! Tính năng OCR nhận diện chữ sẽ chuyển ảnh thành text tự động.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      // TODO: Integrate google_mlkit_text_recognition for actual OCR
+      // final inputImage = InputImage.fromFilePath(image.path);
+      // final textRecognizer = TextRecognizer();
+      // final recognized = await textRecognizer.processImage(inputImage);
+      // _contentController.text += recognized.text;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   void _showBookSelector(List<UserBook> books) {

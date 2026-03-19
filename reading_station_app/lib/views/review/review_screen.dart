@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/flashcard_provider.dart';
+import 'flashcard_review_screen.dart';
 
-class ReviewScreen extends StatelessWidget {
+class ReviewScreen extends ConsumerWidget {
   const ReviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dueAsync = ref.watch(dueFlashcardsProvider);
+    final statsAsync = ref.watch(flashcardStatsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
@@ -28,113 +34,138 @@ class ReviewScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Hero Card (Daily Task)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF7043), Color(0xFF42A5F5)], // Orange to Blue gradient
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              dueAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Lỗi: $e'),
+                data: (dueCards) {
+                  final count = dueCards.length;
+                  final minutes = (count * 0.4).ceil(); // ~25s mỗi thẻ
+                  
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF7043), Color(0xFF42A5F5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
                       children: [
-                        const Text(
-                          'Nhiệm vụ hôm nay',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Nhiệm vụ hôm nay',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                count > 0 ? '~$minutes phút' : 'Xong!',
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            )
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 10),
+                        Text(
+                          count > 0 ? '$count thẻ' : '0 thẻ',
+                          style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          count > 0
+                              ? 'Kiến thức cần được "tưới nước" để xanh tốt. Sẵn sàng chưa?'
+                              : 'Tuyệt vời! Bạn đã ôn tập xong hôm nay! 🎉',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: count > 0
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const FlashcardReviewScreen()),
+                                  );
+                                }
+                              : null,
+                          icon: Icon(
+                            count > 0 ? Icons.play_arrow_rounded : Icons.check,
+                            color: const Color(0xFFFF5722),
                           ),
-                          child: const Text('~2 phút', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        )
+                          label: Text(
+                            count > 0 ? 'Bắt đầu ôn tập' : 'Đã hoàn thành',
+                            style: const TextStyle(color: Color(0xFFFF5722), fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      '5 thẻ',
-                      style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Kiến thức cần được "tưới nước" để xanh tốt. Sẵn sàng chưa?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.play_arrow_rounded, color: Color(0xFFFF5722)),
-                      label: const Text(
-                        'Bắt đầu ôn tập',
-                        style: TextStyle(color: Color(0xFFFF5722), fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
               
               const SizedBox(height: 20),
 
               // Stats Row
-              Row(
-                children: [
-                  Expanded(child: _buildStatCard('3 ngày', 'Chuỗi liên tục', const Color(0xFFFFF3E0), Icons.local_fire_department, Colors.orange)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _buildStatCard('120', 'Thẻ đã thuộc', const Color(0xFFE8F5E9), Icons.check_circle_outline, Colors.green)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _buildStatCard('15', 'Tổng bộ thẻ', const Color(0xFFFFEBE5), Icons.layers, Colors.redAccent)),
-                ],
+              statsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (stats) {
+                  return Row(
+                    children: [
+                      Expanded(child: _buildStatCard(
+                        '${stats['due'] ?? 0}', 'Cần ôn hôm nay',
+                        const Color(0xFFFFF3E0), Icons.local_fire_department, Colors.orange,
+                      )),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildStatCard(
+                        '${stats['mastered'] ?? 0}', 'Thẻ đã thuộc',
+                        const Color(0xFFE8F5E9), Icons.check_circle_outline, Colors.green,
+                      )),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildStatCard(
+                        '${stats['total'] ?? 0}', 'Tổng thẻ',
+                        const Color(0xFFFFEBE5), Icons.layers, Colors.redAccent,
+                      )),
+                    ],
+                  );
+                },
               ),
               
               const SizedBox(height: 20),
              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Bộ thẻ cần ôn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  TextButton(
-                    onPressed: () {}, 
-                    child: const Text('Xem tất cả', style: TextStyle(color: Color(0xFFFF5722), fontSize: 12)),
-                  )
-                ],
-              ),
-
+              const Text('Hướng dẫn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 10),
 
-              // Deck List
-              _buildDeckItem(
-                title: 'Dám bị ghét', 
-                subtitle: '2 thẻ cần ôn', 
-                imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1516086883i/38128362.jpg',
-                isDue: true
+              _buildTipCard(
+                icon: Icons.note_add,
+                title: 'Tạo Flashcard',
+                description: 'Vào tab Ghi chú → chọn 1 ghi chú → nhấn "Tạo FlashCard" để bắt đầu.',
               ),
               const SizedBox(height: 10),
-              _buildDeckItem(
-                title: 'Sapiens: Lược sử loài người', 
-                subtitle: '3 thẻ cần ôn', 
-                imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1420585954i/23692271.jpg',
-                isDue: true
+              _buildTipCard(
+                icon: Icons.psychology,
+                title: 'Thuật toán SM-2',
+                description: 'Hệ thống tự động điều chỉnh lịch ôn dựa trên mức nhớ của bạn (Quên → Khó → Tốt → Dễ).',
               ),
               const SizedBox(height: 10),
-               _buildDeckItem(
-                title: 'Nghĩ giàu làm giàu', 
-                subtitle: 'Đã xong hôm nay', 
-                imageUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1463241782i/30186948.jpg',
-                isDue: false
+              _buildTipCard(
+                icon: Icons.alarm,
+                title: 'Ôn tập mỗi ngày',
+                description: 'Chỉ cần 2-5 phút mỗi ngày để kiến thức ăn sâu vào bộ nhớ dài hạn.',
               ),
             ],
           ),
@@ -162,51 +193,28 @@ class ReviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDeckItem({required String title, required String subtitle, required String imageUrl, required bool isDue}) {
+  Widget _buildTipCard({required IconData icon, required String title, required String description}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        // border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  imageUrl,
-                  height: 50,
-                  width: 35,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 50, width: 35, color: Colors.grey[300],
-                  ),
-                ),
-              ),
-          const SizedBox(width: 15),
+          Icon(icon, color: const Color(0xFFFA6400), size: 28),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 4),
-                 if (isDue)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFFFEBE5), borderRadius: BorderRadius.circular(4)),
-                      child: Text(subtitle, style: const TextStyle(color: Color(0xFFFF5722), fontSize: 10, fontWeight: FontWeight.bold)),
-                    )
-                 else
-                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
-                      child: Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-                    )
+                Text(description, style: TextStyle(color: Colors.grey[600], fontSize: 12, height: 1.4)),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         ],
       ),
     );
