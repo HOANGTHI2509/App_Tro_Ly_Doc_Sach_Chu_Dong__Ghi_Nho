@@ -1,0 +1,24 @@
+# AI Indexing & Search Rules
+
+# Ignore build artifacts and internal tool data
+build/
+.dart_tool/
+.pub-cache/
+.pub/
+
+# Ignore platform-specific folders (usually not needed for logic/UI)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Ignore large binary assets and logs
+assets/
+logs/
+*.txt
+*.log
+
+# Ignore documentation that is already indexed in Knowledge Items
+# project_roadmap_detailed.md

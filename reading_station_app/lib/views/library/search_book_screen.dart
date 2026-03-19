@@ -78,11 +78,21 @@ class SearchBooksNotifier extends Notifier<SearchState> {
   Future<void> _searchInitial(String query) async {
     try {
       final api = ref.read(searchApiProvider);
-      final books = await api.searchBooks(query, startIndex: 0);
+      var fetchedBooks = await api.searchBooks(query, startIndex: 0);
+      
+      // Filter results to be more relevant if the query is specific
+      if (query.length > 3) {
+        final lowerQuery = query.toLowerCase();
+        fetchedBooks = fetchedBooks.where((book) {
+          final lowerTitle = book.title.toLowerCase();
+          return lowerTitle.contains(lowerQuery);
+        }).toList();
+      }
+
       state = SearchState(
-        books: books,
+        books: fetchedBooks,
         query: query,
-        hasReachedMax: books.length < 10,
+        hasReachedMax: fetchedBooks.length < 10,
         isLoading: false,
       );
     } catch (e) {
@@ -99,10 +109,19 @@ class SearchBooksNotifier extends Notifier<SearchState> {
 
     try {
       final api = ref.read(searchApiProvider);
-      final newBooks = await api.searchBooks(
+      var newBooks = await api.searchBooks(
         state.query,
         startIndex: state.books.length,
       );
+
+      // Filter results to be more relevant if the query is specific
+      if (state.query.length > 3) {
+        final lowerQuery = state.query.toLowerCase();
+        newBooks = newBooks.where((book) {
+          final lowerTitle = book.title.toLowerCase();
+          return lowerTitle.contains(lowerQuery);
+        }).toList();
+      }
 
       if (newBooks.isEmpty) {
         state = state.copyWith(isLoadingMore: false, hasReachedMax: true);
@@ -329,7 +348,10 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
                       width: 65,
                       height: 95,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => _defaultCover(),
+                      errorBuilder: (context, error, stackTrace) {
+                        print('Error loading image ${book.imageUrl}: $error');
+                        return _defaultCover();
+                      },
                     )
                   : _defaultCover(),
             ),

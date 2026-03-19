@@ -50,8 +50,18 @@ class Book {
     if (volumeInfo['imageLinks'] != null) {
       parsedImageUrl = volumeInfo['imageLinks']['thumbnail'] ?? 
                        volumeInfo['imageLinks']['smallThumbnail'] ?? '';
-      // Google sometimes returns http, replace with https
-      parsedImageUrl = parsedImageUrl.replaceAll('http://', 'https://');
+      
+      if (parsedImageUrl.isNotEmpty) {
+        // Replace http with https
+        parsedImageUrl = parsedImageUrl.replaceAll('http://', 'https://');
+        // Remove problematic parameters
+        parsedImageUrl = parsedImageUrl.replaceAll('&edge=curl', '');
+      }
+    }
+    
+    // Fallback: If still empty, try to construct from ID
+    if (parsedImageUrl.isEmpty && json['id'] != null) {
+      parsedImageUrl = 'https://books.google.com/books/content?id=${json['id']}&printsec=frontcover&img=1&zoom=1';
     }
 
     // Parse Categories

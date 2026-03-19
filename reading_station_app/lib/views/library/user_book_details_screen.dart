@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
+import '../../../providers/note_provider.dart';
 
 class UserBookDetailsScreen extends ConsumerStatefulWidget {
   final UserBook userBook;
@@ -21,6 +22,9 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
   late TextEditingController _progressController;
   bool _isSaving = false;
   bool _isUploadingImage = false;
+  double _sliderValue = 0.0;
+
+  final Color _primaryOrange = const Color(0xFFFA6400);
 
   @override
   void initState() {
@@ -28,6 +32,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
     _currentBook = widget.userBook;
     _notesController = TextEditingController(text: _currentBook.notes);
     _progressController = TextEditingController(text: _currentBook.readingProgress.toString());
+    _sliderValue = _currentBook.readingProgress.toDouble();
   }
 
   @override
@@ -40,23 +45,19 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
   Future<void> _saveChanges() async {
     setState(() => _isSaving = true);
     
-    // Parse progress safely
     int newProgress = int.tryParse(_progressController.text) ?? _currentBook.readingProgress;
     final int maxPages = _currentBook.book.totalPages ?? 9999;
     if (newProgress > maxPages) newProgress = maxPages;
     if (newProgress < 0) newProgress = 0;
 
-    // Always respect the status the user selected via the chip
     BookStatus newStatus = _currentBook.status;
     DateTime? newCompletedDate = _currentBook.dateCompleted;
     
-    // Auto-complete ONLY if user hit max pages without manually picking "completed"
     if (newProgress == maxPages && newProgress > 0 && newStatus != BookStatus.completed) {
       newStatus = BookStatus.completed;
       newCompletedDate = DateTime.now();
     }
 
-    // Reset completed date if user moves book away from completed
     if (newStatus != BookStatus.completed) {
       newCompletedDate = null;
     }
@@ -75,10 +76,14 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
         setState(() {
           _currentBook = updatedBook;
           _progressController.text = newProgress.toString();
+          _sliderValue = newProgress.toDouble();
           _isSaving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã lưu thay đổi thành công!')));
-        Navigator.pop(context); // Auto-pop after saving
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Đã cập nhật tiến độ!'),
+            backgroundColor: _primaryOrange,
+        ));
+        Navigator.pop(context);
       }
     } catch (e) {
        if (mounted) {
@@ -91,7 +96,6 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
     
-    // Show dialog to choose source
     final ImageSource? source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
@@ -122,7 +126,6 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
 
       setState(() => _isUploadingImage = true);
 
-      // Upload to Supabase Storage
       final String fileName = '${_currentBook.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
       await Supabase.instance.client.storage
@@ -133,7 +136,6 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
           .from('covers')
           .getPublicUrl(fileName);
 
-      // Update current book silently (will be saved to DB when user presses Save)
       setState(() {
         _currentBook = _currentBook.copyWith(customCoverUrl: downloadUrl);
         _isUploadingImage = false;
@@ -157,225 +159,492 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
     DateTime? completedDate = _currentBook.dateCompleted;
     if (status == BookStatus.completed) {
       completedDate = DateTime.now();
-      // Auto-fill progress to max if marked completed
       if (_currentBook.book.totalPages != null) {
          _progressController.text = _currentBook.book.totalPages.toString();
+         _sliderValue = _currentBook.book.totalPages!.toDouble();
       }
     } else if (status == BookStatus.reading && _currentBook.status == BookStatus.completed) {
-      completedDate = null; // reset completion date if move back to reading
+      completedDate = null;
     }
 
     setState(() {
       _currentBook = _currentBook.copyWith(status: status, dateCompleted: completedDate);
     });
-    // Don't auto-save immediately, let user click save
+  }
+
+  void _showQuickNoteBottomSheet() {
+    final noteController = TextEditingController();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Thêm ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryOrange)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteController,
+                maxLines: 4,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Nhập nội dung ghi chú...',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (noteController.text.trim().isNotEmpty) {
+                      await ref.read(noteControllerProvider.notifier).addNote(
+                        _currentBook.id, 
+                        noteController.text.trim(),
+                        pageNumber: int.tryParse(_progressController.text)
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm ghi chú!')));
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryOrange,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Lưu ghi chú', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      }
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final int totalPages = _currentBook.book.totalPages ?? 100;
+    double maxSliderVal = totalPages.toDouble();
+    if (_sliderValue > maxSliderVal) _sliderValue = maxSliderVal;
+    
+    int currentPercentage = 0;
+    if (totalPages > 0) {
+      int prog = int.tryParse(_progressController.text) ?? 0;
+      currentPercentage = ((prog / totalPages) * 100).round();
+      if (currentPercentage > 100) currentPercentage = 100;
+      if (currentPercentage < 0) currentPercentage = 0;
+    }
+
+    final notesAsyncValue = ref.watch(bookNotesProvider(_currentBook.id));
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF9F6F0), // Bám sát màu kem nhạt của ảnh mẫu
       appBar: AppBar(
-        title: const Text('Cập nhật sách', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text(
+          'Cập nhật Tiến độ', 
+          style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 18)
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            icon: const Icon(Icons.delete, color: Colors.redAccent),
             onPressed: _showDeleteConfirm,
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Cover + Info
-            Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 100), // padding dưới lớn để nhường chỗ cho nút Lưu
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: _isUploadingImage ? null : _pickAndUploadImage,
-                  child: Stack(
-                    alignment: Alignment.center,
+                // Thẻ Thông tin sách
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2EFEB), // Nền hơi sậm hơn một xíu tạo độ nổi
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _currentBook.displayImageUrl.isNotEmpty
-                          ? Image.network(_currentBook.displayImageUrl, width: 90, height: 130, fit: BoxFit.cover, errorBuilder: (_,__,___) => _defaultCover())
-                          : _defaultCover(),
+                       GestureDetector(
+                        onTap: _isUploadingImage ? null : _pickAndUploadImage,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8, offset: const Offset(4, 4))],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: _currentBook.displayImageUrl.isNotEmpty
+                                  ? Image.network(_currentBook.displayImageUrl, width: 85, height: 125, fit: BoxFit.cover, errorBuilder: (_,__,___) => _defaultCover())
+                                  : _defaultCover(),
+                              ),
+                            ),
+                            if (_isUploadingImage)
+                              const CircularProgressIndicator(color: Colors.white),
+                          ],
+                        ),
                       ),
-                      if (_isUploadingImage)
-                        const CircularProgressIndicator(color: Colors.white),
-                      if (!_isUploadingImage)
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.only(topLeft: Radius.circular(8), bottomRight: Radius.circular(8))),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-                          ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_currentBook.book.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF2C3E35), fontFamily: 'Serif')),
+                            const SizedBox(height: 6),
+                            Text(_currentBook.book.author, style: TextStyle(fontSize: 15, color: Colors.grey[600])),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[500]),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text('Bắt đầu: ${_formatDate(_currentBook.dateAdded)}', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                                ),
+                              ],
+                            )
+                          ],
                         )
+                      )
                     ],
                   ),
                 ),
-                const SizedBox(width: 15),
-                Expanded(
+                const SizedBox(height: 30),
+
+                // Trạng thái đọc
+                const Text('TRẠNG THÁI ĐỌC', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildStatusChip(BookStatus.wishlist, 'Muốn đọc'),
+                    const SizedBox(width: 12),
+                    _buildStatusChip(BookStatus.reading, 'Đang đọc'),
+                    const SizedBox(width: 12),
+                    _buildStatusChip(BookStatus.completed, 'Đã xong'),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // 5-Star Rating if Completed
+                if (_currentBook.status == BookStatus.completed) ...[
+                  const Text('ĐÁNH GIÁ CỦA BẠN', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
+                  _buildRatingStars(),
+                  const SizedBox(height: 24),
+                ],
+
+                // Tiến độ Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2EFEB),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_currentBook.book.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      Text(_currentBook.book.author, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-                      const SizedBox(height: 10),
-                      Text('Đã thêm: ${_formatDate(_currentBook.dateAdded)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('TIẾN ĐỘ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
+                      const SizedBox(height: 20),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE5DFD5), // Nền hơi xỉn của progress input
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextField(
+                              controller: _progressController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _primaryOrange),
+                              decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
+                              onChanged: (val) {
+                                 double newVal = double.tryParse(val) ?? 0.0;
+                                 if (newVal > maxSliderVal) newVal = maxSliderVal;
+                                 setState(() {
+                                   _sliderValue = newVal;
+                                 });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Text('/ ${_currentBook.book.totalPages ?? '?'} trang', style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500)),
+                          ),
+                          const Spacer(),
+                          Text('$currentPercentage%', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: _primaryOrange)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: _primaryOrange,
+                          inactiveTrackColor: const Color(0xFFE5DFD5),
+                          thumbColor: _primaryOrange,
+                          overlayColor: _primaryOrange.withOpacity(0.2),
+                          trackHeight: 8,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0, pressedElevation: 8.0),
+                        ),
+                        child: Slider(
+                          value: _sliderValue,
+                          min: 0,
+                          max: maxSliderVal,
+                          onChanged: (val) {
+                            setState(() {
+                              _sliderValue = val;
+                              _progressController.text = val.toInt().toString();
+                            });
+                          },
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('0', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                          Text('${_currentBook.book.totalPages ?? '?'} trang', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                        ],
+                      )
                     ],
-                  )
-                )
-              ],
-            ),
-            const SizedBox(height: 30),
+                  ),
+                ),
+                const SizedBox(height: 30),
 
-            // Target 1: Status Selection
-            const Text('Trạng thái của bạn', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildStatusChip(BookStatus.wishlist, 'Muốn đọc', Colors.orange),
-                const SizedBox(width: 10),
-                _buildStatusChip(BookStatus.reading, 'Đang đọc', Colors.blue),
-                const SizedBox(width: 10),
-                _buildStatusChip(BookStatus.completed, 'Đã xong', Colors.green),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // Target 2: Reading Progress (FR1.3)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                 const Text('Tiến độ đọc (trang)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                 Text('${_currentBook.percentage}%', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _progressController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                // Nút Ghi chú nhanh
+                Container(
+                  width: double.infinity,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8F2), // Cam cực nhạt
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _primaryOrange.withOpacity(0.2), width: 1),
+                  ),
+                  child: InkWell(
+                    onTap: _showQuickNoteBottomSheet,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.edit_note_rounded, color: _primaryOrange, size: 24),
+                        const SizedBox(width: 10),
+                        Text('Ghi chú nhanh', style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 15)),
+                      ],
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('/', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey)),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                     padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-                     decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
-                     child: Text('${_currentBook.book.totalPages ?? '?'} trang', style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+                const SizedBox(height: 30),
+
+                // Vị trí sách / Ghi chú chung
+                const Text('VỊ TRÍ SÁCH / GHI CHÚ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _notesController,
+                  maxLines: 4,
+                  style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  decoration: InputDecoration(
+                    hintText: 'VD: Tủ sách phòng khách, Đang cho mượn tại thư viện...',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                    filled: true,
+                    fillColor: const Color(0xFFEFECE5), // Màu nền giống ảnh
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                   ),
                 ),
+                const SizedBox(height: 30),
+
+                // Ghi chú gần đây (Real ones)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('GHI CHÚ GẦN ĐÂY', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
+                    InkWell(
+                      onTap: () {
+                         Navigator.of(context).popUntil((route) => route.isFirst);
+                      },
+                      child: Text('Xem tất cả', style: TextStyle(fontSize: 13, color: _primaryOrange, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                notesAsyncValue.when(
+                  data: (notes) {
+                    if (notes.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: Text('Chưa có ghi chú nào.', style: TextStyle(color: Colors.grey[500], fontStyle: FontStyle.italic))),
+                      );
+                    }
+                    final recentNotes = notes.take(3).toList();
+                    return Column(
+                      children: recentNotes.map((note) => _buildRealNoteCard(note)).toList(),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Text('Lỗi tải ghi chú', style: TextStyle(color: Colors.red)),
+                ),
+                const SizedBox(height: 40),
               ],
             ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: LinearProgressIndicator(
-                value: (_currentBook.percentage) / 100,
-                backgroundColor: Colors.grey[300],
-                color: Colors.blue,
-                minHeight: 10,
-              ),
-            ),
-            const SizedBox(height: 30),
+          ),
 
-            // Target 3: Physical Location / Notes (FR1.2)
-            const Text('Vị trí sách / Ghi chú (VD: Tủ sách, Cho mượn)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Nhập ghi chú hoặc vị trí sách vật lý...',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+          // Nút Lưu thay đổi neo dưới cùng
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 30, top: 10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFFF9F6F0).withOpacity(0.0),
+                    const Color(0xFFF9F6F0),
+                    const Color(0xFFF9F6F0),
+                  ],
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveChanges,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryOrange,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: _isSaving 
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Lưu thay đổi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
               ),
             ),
-            
-            const SizedBox(height: 40),
-            
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF5722),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                ),
-                child: _isSaving 
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Lưu thay đổi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
-            )
-          ],
-        ),
+          )
+        ],
       )
     );
   }
 
-  Widget _buildStatusChip(BookStatus status, String label, Color baseColor) {
+  Widget _buildStatusChip(BookStatus status, String label) {
     bool isSelected = _currentBook.status == status;
     return Expanded(
       child: InkWell(
         onTap: () => _changeStatus(status),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? baseColor : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? baseColor : Colors.grey[300]!),
+            color: isSelected ? _primaryOrange : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isSelected ? _primaryOrange : Colors.grey[400]!),
           ),
           child: Center(
             child: Text(
               label, 
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.grey[700]
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.black87,
+                fontSize: 14,
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRatingStars() {
+    int currentRating = _currentBook.userRating ?? 0;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        return IconButton(
+          icon: Icon(
+            index < currentRating ? Icons.star : Icons.star_border,
+            color: _primaryOrange,
+            size: 36,
+          ),
+          onPressed: () {
+            setState(() {
+              _currentBook = _currentBook.copyWith(userRating: index + 1);
+            });
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildRealNoteCard(dynamic note) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xFFFFF6F0), borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  note.pageNumber != null ? 'TRANG ${note.pageNumber}' : 'CHUNG', 
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _primaryOrange)
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(_formatDate(note.createdAt), style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.grey[500])),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(note.content, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5)),
+        ],
       ),
     );
   }
 
   Widget _defaultCover() {
     return Container(
-      width: 90, height: 130, color: Colors.grey[300],
-      child: Icon(Icons.menu_book, size: 40, color: Colors.grey[500])
+      width: 85, height: 125, color: Colors.grey[300],
+      child: Icon(Icons.menu_book, size: 30, color: Colors.grey[500])
     );
   }
   
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    List<String> months = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+    return '${date.day} ${months[date.month - 1]}, ${date.year}';
   }
 
   void _showDeleteConfirm() {
@@ -385,12 +654,12 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
         title: const Text('Xóa sách'),
         content: const Text('Bạn có chắc chắn muốn xóa cuốn sách này khỏi thư viện? Mọi dữ liệu ghi chú và tiến độ sẽ bị mất.'),
         actions: [
-           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+           TextButton(onPressed: () => Navigator.pop(context), child: Text('Hủy', style: TextStyle(color: Colors.grey[600]))),
            TextButton(
              onPressed: () {
                ref.read(libraryControllerProvider.notifier).removeBook(_currentBook.id);
-               Navigator.pop(context); // close dialog
-               Navigator.pop(context); // close screen
+               Navigator.pop(context); 
+               Navigator.pop(context); 
                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa sách')));
              }, 
              child: const Text('Xóa', style: TextStyle(color: Colors.red))

@@ -12,9 +12,15 @@
 .swiftpm/
 migrate_working_dir/
 
-# Secret config - DO NOT COMMIT (contains API keys)
+# Secret config & Keys - DO NOT COMMIT
 lib/config/app_config.dart
-
+.env
+*.jks
+*.p12
+*.key
+*.pem
+android/key.properties
+ios/Runner/secrets.xcconfig
 
 # IntelliJ related
 *.iml
@@ -22,31 +28,28 @@ lib/config/app_config.dart
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code related
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
 /coverage/
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# Android Studio artifacts
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
 
 # Firebase
 lib/firebase_options.dart
@@ -54,6 +57,6 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 macos/Runner/GoogleService-Info.plist
 
-# User Specific Exclusions
-*.md
-*.txt
+# Temp files
+*.tmp
+*.bak
