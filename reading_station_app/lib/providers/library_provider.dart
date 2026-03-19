@@ -56,7 +56,16 @@ class LibraryController extends AsyncNotifier<void> {
       await ref.read(libraryRepositoryProvider).removeBook(bookId);
       ref.invalidate(userBooksProvider);
     } catch (e) {
-      print('Error removing book: $e');
+       print('Error removing book: $e');
+    }
+  }
+
+  Future<void> updateSummary(String bookId, String summary) async {
+    try {
+      await ref.read(libraryRepositoryProvider).updateSummary(bookId, summary);
+      ref.invalidate(userBooksProvider);
+    } catch (e) {
+      print('Error updating summary in controller: $e');
     }
   }
 }

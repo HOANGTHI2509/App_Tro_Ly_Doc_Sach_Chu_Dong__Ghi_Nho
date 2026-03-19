@@ -6,6 +6,7 @@ import 'dart:io';
 import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
 import '../../../providers/note_provider.dart';
+import '../notes/book_notes_screen.dart';
 
 class UserBookDetailsScreen extends ConsumerStatefulWidget {
   final UserBook userBook;
@@ -24,7 +25,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
   bool _isUploadingImage = false;
   double _sliderValue = 0.0;
 
-  final Color _primaryOrange = const Color(0xFFFA6400);
+  final Color _primaryGreen = const Color(0xFF568164);
 
   @override
   void initState() {
@@ -80,8 +81,8 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
           _isSaving = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: const Text('Đã cập nhật tiến độ!'),
-            backgroundColor: _primaryOrange,
+            content: const Text('Đã cập nhật ghi chú!'),
+            backgroundColor: _primaryGreen,
         ));
         Navigator.pop(context);
       }
@@ -189,7 +190,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Thêm ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryOrange)),
+              Text('Thêm ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryGreen)),
               const SizedBox(height: 16),
               TextField(
                 controller: noteController,
@@ -221,7 +222,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryOrange,
+                    backgroundColor: _primaryGreen,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('Lưu ghi chú', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -256,7 +257,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
       appBar: AppBar(
         title: Text(
           'Cập nhật Tiến độ', 
-          style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 18)
+          style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 18)
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -384,7 +385,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                               controller: _progressController,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _primaryOrange),
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _primaryGreen),
                               decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
                               onChanged: (val) {
                                  double newVal = double.tryParse(val) ?? 0.0;
@@ -401,16 +402,16 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                             child: Text('/ ${_currentBook.book.totalPages ?? '?'} trang', style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500)),
                           ),
                           const Spacer(),
-                          Text('$currentPercentage%', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: _primaryOrange)),
+                          Text('$currentPercentage%', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: _primaryGreen)),
                         ],
                       ),
                       const SizedBox(height: 20),
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: _primaryOrange,
+                          activeTrackColor: _primaryGreen,
                           inactiveTrackColor: const Color(0xFFE5DFD5),
-                          thumbColor: _primaryOrange,
-                          overlayColor: _primaryOrange.withOpacity(0.2),
+                          thumbColor: _primaryGreen,
+                          overlayColor: _primaryGreen.withOpacity(0.2),
                           trackHeight: 8,
                           thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0, pressedElevation: 8.0),
                         ),
@@ -445,7 +446,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF8F2), // Cam cực nhạt
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _primaryOrange.withOpacity(0.2), width: 1),
+                    border: Border.all(color: _primaryGreen.withOpacity(0.2), width: 1), // Changed from _primaryGreen
                   ),
                   child: InkWell(
                     onTap: _showQuickNoteBottomSheet,
@@ -453,9 +454,9 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.edit_note_rounded, color: _primaryOrange, size: 24),
+                        Icon(Icons.edit_note_rounded, color: _primaryGreen, size: 24),
                         const SizedBox(width: 10),
-                        Text('Ghi chú nhanh', style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text('Ghi chú nhanh', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 15)),
                       ],
                     ),
                   ),
@@ -486,9 +487,11 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                     const Text('GHI CHÚ GẦN ĐÂY', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
                     InkWell(
                       onTap: () {
-                         Navigator.of(context).popUntil((route) => route.isFirst);
+                         Navigator.of(context).push(
+                           MaterialPageRoute(builder: (context) => BookNotesScreen(userBook: _currentBook)),
+                         );
                       },
-                      child: Text('Xem tất cả', style: TextStyle(fontSize: 13, color: _primaryOrange, fontWeight: FontWeight.bold)),
+                      child: Text('Xem tất cả', style: TextStyle(fontSize: 13, color: _primaryGreen, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -536,7 +539,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveChanges,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryOrange,
+                    backgroundColor: _primaryGreen,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
@@ -561,9 +564,9 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? _primaryOrange : Colors.transparent,
+            color: isSelected ? _primaryGreen : Colors.transparent,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isSelected ? _primaryOrange : Colors.grey[400]!),
+            border: Border.all(color: isSelected ? _primaryGreen : Colors.grey[400]!),
           ),
           child: Center(
             child: Text(
@@ -588,7 +591,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
         return IconButton(
           icon: Icon(
             index < currentRating ? Icons.star : Icons.star_border,
-            color: _primaryOrange,
+            color: _primaryGreen,
             size: 36,
           ),
           onPressed: () {
@@ -621,7 +624,7 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
                 decoration: BoxDecoration(color: const Color(0xFFFFF6F0), borderRadius: BorderRadius.circular(8)),
                 child: Text(
                   note.pageNumber != null ? 'TRANG ${note.pageNumber}' : 'CHUNG', 
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _primaryOrange)
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _primaryGreen)
                 ),
               ),
               const SizedBox(width: 8),

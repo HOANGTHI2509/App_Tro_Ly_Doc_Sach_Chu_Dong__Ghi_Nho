@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
 import '../../../providers/note_provider.dart';
+import '../../../providers/nav_provider.dart';
 
 class AddNoteScreen extends ConsumerStatefulWidget {
   const AddNoteScreen({super.key});
@@ -14,8 +15,8 @@ class AddNoteScreen extends ConsumerStatefulWidget {
 class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   UserBook? _selectedBook;
   final TextEditingController _contentController = TextEditingController();
-  final Color _primaryOrange = const Color(0xFFFA6400);
-  String _selectedTag = 'Trích dẫn';
+  final TextEditingController _pageController = TextEditingController(text: '0');
+  final Color _primaryGreen = const Color(0xFF568164);
   int _wordCount = 0;
 
   @override
@@ -35,6 +36,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   void dispose() {
     _contentController.removeListener(_updateWordCount);
     _contentController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -56,7 +58,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       await ref.read(noteControllerProvider.notifier).addNote(
             _selectedBook!.id,
             _contentController.text.trim(),
-            // Có thể thêm tag vào content hoặc xử lý riêng nếu Note model hỗ trợ
+            pageNumber: int.tryParse(_pageController.text),
+            isKeyTakeaway: false, // Normal note by default
           );
       if (mounted) {
         Navigator.pop(context);
@@ -76,6 +79,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final libraryAsync = ref.watch(userBooksProvider);
+    final navIndex = ref.watch(navProvider).value ?? 1; // Default to Notes tab if we used it
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF9F6),
@@ -83,12 +87,17 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: const Icon(Icons.close, color: Colors.black54),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Ghi chú mới',
-          style: TextStyle(color: Color(0xFF2C3E35), fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: Color(0xFF2C3E35), 
+            fontWeight: FontWeight.bold, 
+            fontSize: 18,
+            fontFamily: 'Serif'
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -97,8 +106,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             child: ElevatedButton(
               onPressed: _saveNote,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryOrange,
-                shape: const StadiumBorder(),
+                backgroundColor: _primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 24),
               ),
@@ -108,20 +117,14 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ĐANG ĐỌC TỪ',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.1),
-            ),
-            const SizedBox(height: 12),
-            
+            const SizedBox(height: 10),
             // Thẻ chọn sách
             libraryAsync.when(
               data: (books) {
-                // Nếu chưa chọn, mặc định lấy cuốn đầu tiên hoặc hiện nút chọn
                 if (_selectedBook == null && books.isNotEmpty) {
                   _selectedBook = books.first;
                 }
@@ -129,48 +132,50 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                 return GestureDetector(
                   onTap: () => _showBookSelector(books),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey[200]!),
+                      color: const Color(0xFFF2EFEB),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Row(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: _selectedBook != null && _selectedBook!.displayImageUrl.isNotEmpty
-                            ? Image.network(
-                                _selectedBook!.displayImageUrl, 
-                                width: 45, height: 65, fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 45, height: 65, color: Colors.grey[200], 
-                                  child: const Icon(Icons.broken_image, size: 20, color: Colors.grey)
-                                ),
-                              )
-                            : Container(width: 45, height: 65, color: Colors.grey[200], child: const Icon(Icons.book, color: Colors.grey)),
+                        Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5, offset: const Offset(2, 2))]
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: _selectedBook != null && _selectedBook!.displayImageUrl.isNotEmpty
+                              ? Image.network(
+                                  _selectedBook!.displayImageUrl, 
+                                  width: 50, height: 75, fit: BoxFit.cover,
+                                  errorBuilder: (_,__,___) => _defaultBookIcon(),
+                                )
+                              : _defaultBookIcon(),
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                _selectedBook?.book.title ?? 'Chọn sách...',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E35)),
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                              ),
+                              const Text('ĐANG ĐỌC', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                               const SizedBox(height: 4),
                               Text(
+                                _selectedBook?.book.title ?? 'Chọn sách...',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2C3E35), fontFamily: 'Serif'),
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
                                 _selectedBook?.book.author ?? '',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                                 maxLines: 1, overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                        const Icon(Icons.swap_horiz, color: Colors.grey),
                       ],
                     ),
                   ),
@@ -180,109 +185,158 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
               error: (err, _) => const Text('Lỗi tải danh sách sách'),
             ),
             
+            const SizedBox(height: 20),
+
+            // Trang số & Quét văn bản
+            Row(
+              children: [
+                const Icon(Icons.menu_book, size: 18, color: Color(0xFF8B7E55)),
+                const SizedBox(width: 8),
+                const Text('Trang số:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF2C3E35))),
+                const SizedBox(width: 12),
+                Container(
+                  width: 60,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFECE5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextField(
+                    controller: _pageController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.camera_alt, color: Color(0xFF212529), size: 18),
+                  label: const Text('Quét văn bản', style: TextStyle(color: Color(0xFF212529), fontWeight: FontWeight.bold, fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEFD9A5),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 24),
 
-            // Nút OCR
+            // Vùng nhập liệu nội dung (Styled)
             Container(
               width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.camera_alt, color: Color(0xFF2C3E35)),
-                label: const Text('OCR / Quét văn bản', style: TextStyle(color: Color(0xFF2C3E35), fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFDE8B3), // Màu vàng cam nhạt như ảnh
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              height: 400,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFFFDEBCC).withOpacity(0.5),
+                    const Color(0xFFFDEBCC).withOpacity(0.1),
+                  ],
                 ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                   Expanded(
+                    child: TextField(
+                      controller: _contentController,
+                      maxLines: null,
+                      style: const TextStyle(fontSize: 18, color: Color(0xFF2C3E35), height: 1.6),
+                      decoration: const InputDecoration(
+                        hintText: 'Bắt đầu ghi lại suy nghĩ của bạn...',
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 18),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  
+                  // Toolbar
+                  const Divider(),
+                  Row(
+                    children: [
+                      _buildToolbarIcon(Icons.format_bold),
+                      _buildToolbarIcon(Icons.format_italic),
+                      _buildToolbarIcon(Icons.format_list_bulleted),
+                      _buildToolbarIcon(Icons.format_quote),
+                      const Spacer(),
+                      Text('$_wordCount TỪ', style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    ],
+                  )
+                ],
               ),
             ),
-
-            const SizedBox(height: 30),
-
-            // Chỗ nhập nội dung
-            TextField(
-              controller: _contentController,
-              maxLines: null,
-              style: const TextStyle(fontSize: 18, color: Color(0xFF2C3E35), height: 1.5),
-              decoration: const InputDecoration(
-                hintText: 'Nội dung ghi chú của bạn...',
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 18),
-                border: InputBorder.none,
+            
+            const SizedBox(height: 16),
+            const Text('GỢI Ý:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.0)),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildTagChip('#tamlyhoc'),
+                  const SizedBox(width: 8),
+                  _buildTagChip('#thoi_quen'),
+                  const SizedBox(width: 8),
+                  _buildTagChip('#trichdan'),
+                  const SizedBox(width: 8),
+                  _buildTagChip('#kienthuc'),
+                ],
               ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, left: 20, right: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Row các tag
-            Row(
-              children: [
-                const Icon(Icons.local_offer_outlined, color: Colors.grey, size: 20),
-                const SizedBox(width: 12),
-                _buildTagChip('Cảm nhận', const Color(0xFF4F6F52)),
-                const SizedBox(width: 8),
-                _buildTagChip('Trích dẫn', const Color(0xFF8B7E55)),
-                const SizedBox(width: 8),
-                _buildTagChip('Câu hỏi', const Color(0xFF6B7280)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            
-            // Toolbar dưới cùng
-            Container(
-              height: 64,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFECE5),
-                borderRadius: BorderRadius.circular(32),
-              ),
-              child: Row(
-                children: [
-                  IconButton(icon: const Icon(Icons.list, color: Colors.black54), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo danh sách...')));
-                  }),
-                  IconButton(icon: const Icon(Icons.image_outlined, color: Colors.black54), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thêm ảnh...')));
-                  }),
-                  IconButton(icon: const Icon(Icons.mic_none, color: Colors.black54), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ghi âm...')));
-                  }),
-                  const Spacer(),
-                  Text('$_wordCount từ', style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                ],
-              ),
-            )
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: navIndex,
+        onTap: (index) {
+          ref.read(navProvider.notifier).setIndex(index);
+          Navigator.pop(context); // Go back to main layout which reflects index
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: _primaryGreen,
+        unselectedItemColor: Colors.grey,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Trang chủ'),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books_outlined), activeIcon: Icon(Icons.library_books), label: 'Tủ sách'),
+          BottomNavigationBarItem(icon: Icon(Icons.note_alt_outlined), activeIcon: Icon(Icons.note_alt), label: 'Ghi chú'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Cá nhân'),
+        ],
       ),
     );
   }
 
-  Widget _buildTagChip(String label, Color color) {
-    final isSelected = _selectedTag == label;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedTag = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? color : Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(radius: 3, backgroundColor: color),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: isSelected ? color : Colors.black54, fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-          ],
-        ),
-      ),
+  Widget _buildToolbarIcon(IconData icon) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.black54, size: 20),
+      onPressed: () {},
     );
+  }
+
+  Widget _buildTagChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFECE5).withOpacity(0.7),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+    );
+  }
+
+  Widget _defaultBookIcon() {
+    return Container(width: 50, height: 75, color: Colors.grey[200], child: const Icon(Icons.book, color: Colors.grey, size: 20));
   }
 
   void _showBookSelector(List<UserBook> books) {
@@ -292,10 +346,11 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
+          height: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Chọn sách cho ghi chú', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Chọn sách cho ghi chú', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Serif')),
               const SizedBox(height: 20),
               Expanded(
                 child: ListView.builder(

@@ -80,6 +80,15 @@ class LibraryRepository {
     }
   }
 
+  Future<void> updateSummary(String bookId, String summary) async {
+    try {
+      await _client.from('user_books').update({'summary': summary}).eq('id', bookId);
+    } catch (e) {
+      print('Error updating summary in repository: $e');
+      rethrow;
+    }
+  }
+
   // Remove a book
   Future<void> removeBook(String bookId) async {
     try {

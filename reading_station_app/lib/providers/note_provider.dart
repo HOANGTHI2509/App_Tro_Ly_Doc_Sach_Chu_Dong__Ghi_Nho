@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/note.dart';
 import '../repositories/note_repository.dart';
+import 'review_provider.dart';
 import 'package:uuid/uuid.dart';
 
 // Provider for the repository
@@ -26,7 +27,7 @@ class NoteController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<void> addNote(String userBookId, String content, {int? pageNumber, String? imageUrl, bool? isKeyTakeaway}) async {
+  Future<void> addNote(String userBookId, String content, {String? question, int? pageNumber, String? imageUrl, bool? isKeyTakeaway}) async {
     state = const AsyncLoading();
     try {
       final repository = ref.read(noteRepositoryProvider);
@@ -34,6 +35,7 @@ class NoteController extends AsyncNotifier<void> {
         id: const Uuid().v4(), // Generate UUID off the client
         userBookId: userBookId,
         content: content,
+        question: question,
         pageNumber: pageNumber,
         imageUrl: imageUrl,
         isKeyTakeaway: isKeyTakeaway,
@@ -57,10 +59,22 @@ class NoteController extends AsyncNotifier<void> {
     try {
       await ref.read(noteRepositoryProvider).updateNote(noteId, content);
       ref.invalidate(allNotesProvider);
-      // Nếu muốn chính xác cần userBookId, nhưng invalidate allNotes là đủ để UI update
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
+    }
+  }
+
+  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question}) async {
+    try {
+      await ref.read(noteRepositoryProvider).toggleFlashcardStatus(noteId, isFlashcard, question: question);
+      ref.invalidate(allNotesProvider);
+      
+      // Quan trọng: Invalidate các provider bên phía Ôn tập
+      ref.invalidate(dueNotesProvider);
+      ref.invalidate(totalNotesCountProvider);
+    } catch (e) {
+      print('Error toggling flashcard status: $e');
     }
   }
 

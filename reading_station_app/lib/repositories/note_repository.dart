@@ -59,14 +59,34 @@ class NoteRepository {
     }
   }
 
-  Future<void> updateNote(String noteId, String content) async {
+  Future<void> updateNote(String noteId, String content, {String? question}) async {
     try {
+      final updates = {'content': content};
+      if (question != null) updates['question'] = question;
+      
       await _client
           .from('notes')
-          .update({'content': content})
+          .update(updates)
           .eq('id', noteId);
     } catch (e) {
       print('Error updating note: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question}) async {
+    try {
+      final Map<String, dynamic> updates = {'is_key_takeaway': isFlashcard};
+      if (isFlashcard && question != null) {
+        updates['question'] = question;
+      }
+      
+      await _client
+          .from('notes')
+          .update(updates)
+          .eq('id', noteId);
+    } catch (e) {
+      print('Error toggling flashcard status: $e');
       rethrow;
     }
   }

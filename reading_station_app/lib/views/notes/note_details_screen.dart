@@ -13,7 +13,7 @@ class NoteDetailsScreen extends ConsumerStatefulWidget {
 
 class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
   late TextEditingController _contentController;
-  final Color _primaryOrange = const Color(0xFFFA6400);
+  final Color _primaryGreen = const Color(0xFF568164);
   bool _isBold = false;
 
   @override
@@ -50,7 +50,7 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
       backgroundColor: const Color(0xFFFAF9F6),
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFA6400)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF2C3E35)), // Sửa màu tối cho nút quay lại
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -63,7 +63,7 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
              padding: const EdgeInsets.only(right: 16),
              child: TextButton(
                onPressed: _updateNote,
-               child: const Text('Lưu', style: TextStyle(color: Color(0xFFFA6400), fontWeight: FontWeight.bold, fontSize: 16)),
+               child: Text('Lưu', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 16)),
              ),
           )
         ],
@@ -97,7 +97,7 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.note.bookTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFFA6400))),
+                            Text(widget.note.bookTitle, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryGreen)),
                             const SizedBox(height: 4),
                             Text(widget.note.bookAuthor.isNotEmpty ? widget.note.bookAuthor : 'Đang cập nhật', style: TextStyle(fontSize: 14, color: Colors.grey[600], fontStyle: FontStyle.italic)),
                             const SizedBox(height: 12),
@@ -107,9 +107,9 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
                                child: Row(
                                  mainAxisSize: MainAxisSize.min,
                                  children: [
-                                   const Icon(Icons.menu_book, size: 14, color: Color(0xFF8B7E55)),
+                                   const Icon(Icons.menu_book, size: 14, color: Colors.grey),
                                    const SizedBox(width: 6),
-                                   Text(widget.note.pageNumber != null ? 'Trang ${widget.note.pageNumber}' : 'Ghi chú chung', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF8B7E55))),
+                                   Text(widget.note.pageNumber != null ? 'Trang ${widget.note.pageNumber}' : 'Ghi chú chung', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                                  ],
                                ),
                             )
@@ -159,21 +159,21 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(icon: const Icon(Icons.crop_free, color: Color(0xFFFA6400)), onPressed: () {
+                  IconButton(icon: Icon(Icons.crop_free, color: _primaryGreen), onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mở OCR / Quét văn bản...')));
                   }),
-                  IconButton(icon: const Icon(Icons.image_outlined, color: Color(0xFFFA6400)), onPressed: () {
+                  IconButton(icon: Icon(Icons.image_outlined, color: _primaryGreen), onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chọn ảnh từ thư viện...')));
                   }),
-                  IconButton(icon: const Icon(Icons.mic_none, color: Color(0xFFFA6400)), onPressed: () {
+                  IconButton(icon: Icon(Icons.mic_none, color: _primaryGreen), onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đang lắng nghe giọng nói...')));
                   }),
-                  IconButton(icon: const Icon(Icons.checklist, color: Color(0xFFFA6400)), onPressed: () {
+                  IconButton(icon: Icon(Icons.checklist, color: _primaryGreen), onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo danh sách kiểm tra...')));
                   }),
                   const VerticalDivider(width: 1, indent: 20, endIndent: 20, color: Colors.grey),
                   IconButton(
-                    icon: Icon(Icons.format_bold, color: _isBold ? Colors.black : const Color(0xFFFA6400)), 
+                    icon: Icon(Icons.format_bold, color: _isBold ? Colors.black : _primaryGreen), 
                     onPressed: () {
                       setState(() => _isBold = !_isBold);
                     }
@@ -191,11 +191,11 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: const Color(0xFFF1EDE6),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+        border: Border.all(color: Colors.grey[300]!),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFA6400))),
+      child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _primaryGreen)),
     );
   }
 }

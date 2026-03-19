@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/note.dart';
 import '../../../providers/note_provider.dart';
+import '../../../providers/nav_provider.dart';
 import 'add_note_screen.dart';
 import 'note_details_screen.dart';
 
@@ -17,7 +18,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  final Color _primaryOrange = const Color(0xFFFA6400); 
+  final Color _primaryGreen = const Color(0xFF568164); 
 
   @override
   void dispose() {
@@ -32,7 +33,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F8F5),
       appBar: AppBar(
-        leading: const Icon(Icons.menu, color: Color(0xFFFA6400)),
+        leading: const Icon(Icons.menu, color: Color(0xFF2C3E35)),
         title: _isSearching 
           ? TextField(
               controller: _searchController,
@@ -46,14 +47,14 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
             )
           : Text(
             'Ghi chú',
-            style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Serif'),
+            style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Serif'),
           ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: _primaryOrange),
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: _primaryGreen),
             onPressed: () {
               setState(() {
                 if (_isSearching) {
@@ -73,7 +74,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
         ],
       ),
       body: notesAsync.when(
-        loading: () => Center(child: CircularProgressIndicator(color: _primaryOrange)),
+        loading: () => Center(child: CircularProgressIndicator(color: _primaryGreen)),
         error: (err, _) => const Center(child: Text('Đã xảy ra lỗi tải ghi chú')),
         data: (notes) {
           final List<String> dynamicFilters = ['Tất cả', ...notes.map((n) => n.bookTitle).toSet().toList()];
@@ -103,7 +104,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected ? _primaryOrange : const Color(0xFFEFECE5),
+                            color: isSelected ? _primaryGreen : const Color(0xFFEFECE5),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -142,8 +143,9 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'notes_fab',
         onPressed: () => _showAddNoteScreen(),
-        backgroundColor: _primaryOrange,
+        backgroundColor: _primaryGreen,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: const Icon(Icons.add, color: Colors.white, size: 32),
@@ -215,18 +217,175 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                Icon(Icons.bolt, color: _primaryOrange, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Tạo FlashCard',
-                  style: TextStyle(color: _primaryOrange, fontWeight: FontWeight.bold, fontSize: 13),
+                InkWell(
+                  onTap: () {
+                    final bool isCurrentlyFlashcard = note.isKeyTakeaway ?? false;
+                    
+                    if (!isCurrentlyFlashcard) {
+                      // Nếu muốn tạo mới, hỏi câu hỏi trước
+                      _showFlashcardQuestionDialog(context, note);
+                    } else {
+                      // Nếu muốn hủy, cứ tắt thẳng
+                      ref.read(noteControllerProvider.notifier).toggleFlashcardStatus(note.id, false);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          (note.isKeyTakeaway ?? false) ? Icons.done_all : Icons.bolt, 
+                          color: _primaryGreen, 
+                          size: 20
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          (note.isKeyTakeaway ?? false) ? 'Đã tạo' : 'Tạo FlashCard',
+                          style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const Spacer(),
-                const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteDialog(context, note);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                          SizedBox(width: 8),
+                          Text('Xóa ghi chú', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             )
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, Note note) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa ghi chú?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('HỦY', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(noteControllerProvider.notifier).deleteNote(note.id, note.userBookId);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đã xóa ghi chú thành công!')),
+              );
+            },
+            child: const Text('XÓA', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFlashcardQuestionDialog(BuildContext context, Note note) {
+    final TextEditingController questionController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: _primaryGreen),
+            const SizedBox(width: 10),
+            const Text('Câu hỏi Flashcard', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Thiết lập câu hỏi để bạn tự ôn luyện tốt hơn:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: questionController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Nhập câu hỏi...',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('HỦY', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final question = questionController.text.trim();
+              await ref.read(noteControllerProvider.notifier).toggleFlashcardStatus(
+                note.id, 
+                true, 
+                question: question.isEmpty ? null : question
+              );
+              Navigator.pop(context);
+              
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Sẵn sàng ôn tập!'),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ref.read(navProvider.notifier).setIndex(2);
+                        },
+                        child: const Text('XEM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      )
+                    ],
+                  ),
+                  backgroundColor: _primaryGreen,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('TẠO THẺ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
