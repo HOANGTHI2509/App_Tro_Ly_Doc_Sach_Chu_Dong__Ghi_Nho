@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We will keep our MainScreen)
+import 'package:reading_station_app/views/auth/auth_wrapper.dart';
 // The remote imported features/library/library_page.dart, but our MainScreen is likely the current source of truth for navigation.
 import 'package:reading_station_app/views/library/library_screen.dart';
 import 'package:reading_station_app/services/notification_service.dart';
@@ -16,8 +17,8 @@ void main() async {
   
   // Initialize Supabase correctly for Auth and Database
   await Supabase.initialize(
-    url: 'https://kvechqvsflmmxruikrtt.supabase.co',
-    anonKey: 'sb_publishable_Bn9x0JxeSONUEDX_ItvyJQ__9hwuUMT',
+    url: 'https://uauixrhtykxsxdzqyxkk.supabase.co',
+    anonKey: 'sb_publishable_YumQQKtiw2Ia6HHlhPY4Xg_7kvnQ09T',
   );
 
   // Initialize Notification Service
@@ -42,18 +43,7 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0, iconTheme: IconThemeData(color: Colors.black)),
         textTheme: GoogleFonts.beVietnamProTextTheme(Theme.of(context).textTheme),
       ),
-      home: StreamBuilder<User?>(
-        stream: AuthController().authStateChanges,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            return const MainScreen();
-          }
-          return const LoginScreen();
-        },
-      ),
+      home: const AuthWrapper(),
     );
   }
 }
