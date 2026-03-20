@@ -1,1 +1,0 @@
-PostgrestException(message: Could not find the 'user1_id' column of 'friendships' in the schema cache, code: PGRST204, details: Bad Request, hint: null)

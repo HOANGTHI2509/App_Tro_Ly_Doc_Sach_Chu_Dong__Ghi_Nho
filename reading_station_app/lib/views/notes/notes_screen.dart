@@ -8,6 +8,7 @@ import 'add_note_screen.dart';
 import 'note_details_screen.dart';
 import 'widgets/create_flashcard_bottom_sheet.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../profile/profile_screen.dart';
 
 class NotesScreen extends ConsumerStatefulWidget {
   const NotesScreen({super.key});
@@ -32,6 +33,9 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     final notesAsync = ref.watch(allNotesProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final String? avatarUrl = profileAsync.value?['avatar_url'];
+    final String name = profileAsync.value?['name'] ?? 'A';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F8F5),
@@ -67,11 +71,18 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
               });
             },
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16.0),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
               radius: 17,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=readingstation_user'),
+              backgroundColor: _primaryGreen,
+              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+              child: (avatarUrl == null || avatarUrl.isEmpty)
+                  ? Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    )
+                  : null,
             ),
           )
         ],

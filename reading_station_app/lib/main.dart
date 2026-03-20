@@ -10,6 +10,7 @@ import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We wi
 // The remote imported features/library/library_page.dart, but our MainScreen is likely the current source of truth for navigation.
 import 'package:reading_station_app/views/library/library_screen.dart';
 import 'package:reading_station_app/services/notification_service.dart';
+import 'package:reading_station_app/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,20 +28,30 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+    
     return MaterialApp(
       title: 'Trạm Đọc',
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
       theme: ThemeData(
         useMaterial3: false,
+        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFA6400), primary: const Color(0xFFFA6400)),
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0, iconTheme: IconThemeData(color: Colors.black)),
-        textTheme: GoogleFonts.beVietnamProTextTheme(Theme.of(context).textTheme),
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        textTheme: ThemeData.dark().textTheme.apply(fontFamily: GoogleFonts.beVietnamPro().fontFamily),
+        primaryTextTheme: ThemeData.dark().textTheme.apply(fontFamily: GoogleFonts.beVietnamPro().fontFamily),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFA6400), primary: const Color(0xFFFA6400), brightness: Brightness.dark),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0, iconTheme: IconThemeData(color: Colors.white)),
       ),
       home: StreamBuilder<User?>(
         stream: AuthController().authStateChanges,

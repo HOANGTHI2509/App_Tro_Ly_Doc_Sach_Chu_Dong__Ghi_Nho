@@ -383,7 +383,20 @@ class CommunityScreen extends ConsumerWidget {
                   Text(_getRelativeTime(createdAt).toUpperCase(), style: const TextStyle(fontSize: 10, color: Color(0xFF9E9E9E), letterSpacing: 1.0, fontWeight: FontWeight.bold)),
                 ]),
               ),
-              const Icon(Icons.more_horiz, color: Color(0xFFBDBDBD)),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz, color: Color(0xFFBDBDBD)),
+                onSelected: (value) {
+                  if (value == 'report') {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng báo cáo sẽ được phát triển sau')));
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'report',
+                    child: Text('Báo cáo'),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -404,9 +417,6 @@ class CommunityScreen extends ConsumerWidget {
                 onTap: () => _showCommentsSheet(context, activity['id']),
               ),
               const Spacer(),
-              Icon(Icons.bookmark_border, color: Colors.grey[500], size: 22),
-              const SizedBox(width: 16),
-              Icon(Icons.share, color: Colors.grey[500], size: 20),
             ],
           ),
         ],

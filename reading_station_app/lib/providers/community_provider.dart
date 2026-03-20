@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../repositories/friendship_repository.dart';
 import '../repositories/activity_repository.dart';
 
@@ -18,11 +19,19 @@ final friendsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
 
 /// Lời mời đang chờ
 final pendingRequestsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final showRequests = prefs.getBool('notif_friend_requests') ?? true;
+  if (!showRequests) return [];
+
   return ref.watch(friendshipRepositoryProvider).getPendingRequests();
 });
 
 /// Feed hoạt động
 final feedProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final showActivity = prefs.getBool('notif_friend_activity') ?? true;
+  if (!showActivity) return [];
+
   return ref.watch(activityRepositoryProvider).getFeed();
 });
 

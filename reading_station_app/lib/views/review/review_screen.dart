@@ -95,85 +95,98 @@ class ReviewScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Custom Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
-                    ),
-                    Text(
-                      'Ôn tập',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryGreen,
-                        fontFamily: 'Serif',
+                _AnimatedReviewItem(
+                  index: 0,
+                  animateSlide: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const CircleAvatar(
+                        radius: 18,
+                        backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ReviewSettingsScreen()));
-                      },
-                    ),
-                  ],
+                      Text(
+                        'Ôn tập',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _primaryGreen,
+                          fontFamily: 'Serif',
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReviewSettingsScreen()));
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
           
                 // Hero Card: Nhiệm vụ hôm nay
-                dueNotesAsync.when(
-                  data: (notes) => _buildHeroCard(context, notes, _primaryGreen),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, __) => Text('Lỗi: $e'),
+                _AnimatedReviewItem(
+                  index: 1,
+                  child: dueNotesAsync.when(
+                    data: (notes) => _buildHeroCard(context, notes, _primaryGreen),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, __) => Text('Lỗi: $e'),
+                  ),
                 ),
                 
                 const SizedBox(height: 24),
           
                 // Stats Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: streakAsync.when(
-                        data: (streak) => _buildStatCard('$streak ngày', 'CHUỖI', const Color(0xFFFAEDE3), Icons.local_fire_department_rounded, Colors.orange[800]!),
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => const Text('Lỗi'),
+                _AnimatedReviewItem(
+                  index: 2,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: streakAsync.when(
+                          data: (streak) => _buildStatCard('$streak ngày', 'CHUỖI', const Color(0xFFFAEDE3), Icons.local_fire_department_rounded, Colors.orange[800]!),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => const Text('Lỗi'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: memorizedCountAsync.when(
-                        data: (count) => _buildStatCard(count.toString(), 'ĐÃ THUỘC', const Color(0xFFE8F1EB), Icons.check_circle_rounded, _primaryGreen),
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => const SizedBox(),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: memorizedCountAsync.when(
+                          data: (count) => _buildStatCard(count.toString(), 'ĐÃ THUỘC', const Color(0xFFE8F1EB), Icons.check_circle_rounded, _primaryGreen),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => const SizedBox(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: totalNotesCountAsync.when(
-                        data: (count) => _buildStatCard(count.toString(), 'TỔNG SỐ', const Color(0xFFF9F1E6), Icons.layers_rounded, const Color(0xFF2C3E35)),
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => const SizedBox(),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: totalNotesCountAsync.when(
+                          data: (count) => _buildStatCard(count.toString(), 'TỔNG SỐ', const Color(0xFFF9F1E6), Icons.layers_rounded, const Color(0xFF2C3E35)),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => const SizedBox(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 
                 const SizedBox(height: 32),
           
                 // Bộ thẻ cần ôn Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Bộ thẻ cần ôn',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF1B263B)),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text('Xem tất cả', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
-                    ),
-                  ],
+                _AnimatedReviewItem(
+                  index: 3,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Bộ thẻ cần ôn',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF1B263B)),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: Text('Xem tất cả', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
           
@@ -184,12 +197,15 @@ class ReviewScreen extends ConsumerWidget {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
-                          child: Column(
-                            children: [
-                              Icon(Icons.inventory_2_outlined, size: 40, color: Colors.grey[300]),
-                              const SizedBox(height: 12),
-                              Text('Chưa có thẻ nào cần ôn hôm nay!', style: TextStyle(color: Colors.grey[500])),
-                            ],
+                          child: _AnimatedReviewItem(
+                            index: 4,
+                            child: Column(
+                              children: [
+                                Icon(Icons.inventory_2_outlined, size: 40, color: Colors.grey[300]),
+                                const SizedBox(height: 12),
+                                Text('Chưa có thẻ nào cần ôn hôm nay!', style: TextStyle(color: Colors.grey[500])),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -202,26 +218,31 @@ class ReviewScreen extends ConsumerWidget {
                     }
                     
                     return Column(
-                      children: grouped.entries.map((entry) {
+                      children: grouped.entries.toList().asMap().entries.map((mapEntry) {
+                        int index = mapEntry.key;
+                        var entry = mapEntry.value;
                         final bookNotes = entry.value;
                         final firstNote = bookNotes.first;
-                      return Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                ref.read(isDueModeProvider.notifier).state = true;
-                                ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
-                              },
-                              child: _buildDeckItem(
-                                title: entry.key,
-                                author: firstNote.bookAuthor,
-                                cardCount: bookNotes.length,
-                                imageUrl: firstNote.bookImageUrl,
-                                color: const Color(0xFFF3E5BC),
+                        return _AnimatedReviewItem(
+                          index: 4 + index,
+                          child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  ref.read(isDueModeProvider.notifier).state = true;
+                                  ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
+                                },
+                                child: _buildDeckItem(
+                                  title: entry.key,
+                                  author: firstNote.bookAuthor,
+                                  cardCount: bookNotes.length,
+                                  imageUrl: firstNote.bookImageUrl,
+                                  color: const Color(0xFFF3E5BC),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
+                              const SizedBox(height: 16),
+                            ],
+                          ),
                         );
                       }).toList(),
                     );
@@ -233,18 +254,21 @@ class ReviewScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 
                 // Bộ thẻ đã tạo Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Bộ thẻ đã tạo',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF1B263B)),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text('Xem tất cả', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
-                    ),
-                  ],
+                _AnimatedReviewItem(
+                  index: 6,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Bộ thẻ đã tạo',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF1B263B)),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: Text('Xem tất cả', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -259,7 +283,10 @@ class ReviewScreen extends ConsumerWidget {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
-                          child: Text('Chưa có bộ thẻ nào được tạo!', style: TextStyle(color: Colors.grey[500])),
+                          child: _AnimatedReviewItem(
+                            index: 7,
+                            child: Text('Chưa có bộ thẻ nào được tạo!', style: TextStyle(color: Colors.grey[500]))
+                          ),
                         ),
                       );
                     }
@@ -271,26 +298,31 @@ class ReviewScreen extends ConsumerWidget {
                     }
                     
                     return Column(
-                      children: grouped.entries.map((entry) {
+                      children: grouped.entries.toList().asMap().entries.map((mapEntry) {
+                        int index = mapEntry.key;
+                        var entry = mapEntry.value;
                         final bookNotes = entry.value;
                         final firstNote = bookNotes.first;
-                      return Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                ref.read(isDueModeProvider.notifier).state = false;
-                                ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
-                              },
-                              child: _buildDeckItem(
-                                title: entry.key,
-                                author: firstNote.bookAuthor,
-                                cardCount: bookNotes.length,
-                                imageUrl: firstNote.bookImageUrl,
-                                color: const Color(0xFFE8F1EB), // Light green to differentiate
+                        return _AnimatedReviewItem(
+                          index: 7 + index,
+                          child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  ref.read(isDueModeProvider.notifier).state = false;
+                                  ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
+                                },
+                                child: _buildDeckItem(
+                                  title: entry.key,
+                                  author: firstNote.bookAuthor,
+                                  cardCount: bookNotes.length,
+                                  imageUrl: firstNote.bookImageUrl,
+                                  color: const Color(0xFFE8F1EB), // Light green to differentiate
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
+                              const SizedBox(height: 16),
+                            ],
+                          ),
                         );
                       }).toList(),
                     );
@@ -509,6 +541,52 @@ class ReviewScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
         ],
+      ),
+    );
+  }
+}
+
+class _AnimatedReviewItem extends StatefulWidget {
+  final Widget child;
+  final int index;
+  final bool animateSlide;
+
+  const _AnimatedReviewItem({Key? key, required this.child, required this.index, this.animateSlide = true}) : super(key: key);
+
+  @override
+  State<_AnimatedReviewItem> createState() => _AnimatedReviewItemState();
+}
+
+class _AnimatedReviewItemState extends State<_AnimatedReviewItem> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _slideAnimation = Tween<Offset>(begin: widget.animateSlide ? const Offset(0.0, 0.15) : Offset.zero, end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: widget.child,
       ),
     );
   }
