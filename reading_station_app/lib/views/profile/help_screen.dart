@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'support_chat_screen.dart';
 
 class HelpScreen extends StatelessWidget {
@@ -259,8 +260,94 @@ class HelpScreen extends StatelessWidget {
   }
 }
 
-class SupportRequestScreen extends StatelessWidget {
+class SupportRequestScreen extends StatefulWidget {
   const SupportRequestScreen({super.key});
+
+  @override
+  State<SupportRequestScreen> createState() => _SupportRequestScreenState();
+}
+
+class _SupportRequestScreenState extends State<SupportRequestScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+  String _selectedSubject = 'Chọn chủ đề hỗ trợ';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  void _loadUserInfo() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      _emailController.text = user.email ?? '';
+      // Có thể lấy tên từ meta data nếu có
+      final metadata = user.userMetadata;
+      if (metadata != null && metadata.containsKey('name')) {
+         _nameController.text = metadata['name'];
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitRequest() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final message = _messageController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || message.isEmpty || _selectedSubject == 'Chọn chủ đề hỗ trợ') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin!'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      
+      await Supabase.instance.client.from('support_requests').insert({
+        if (user != null) 'user_id': user.id,
+        'name': name,
+        'email': email,
+        'subject': _selectedSubject,
+        'message': message,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gửi yêu cầu thành công! Chúng tôi sẽ phản hồi sớm nhất.'),
+          backgroundColor: Color(0xFF4A745B),
+        ),
+      );
+      Navigator.pop(context); // Quay lại sau khi gửi thành công
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi gửi yêu cầu: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,10 +395,10 @@ class SupportRequestScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildLabel('Họ và tên'),
-                  _buildTextField('Nguyễn Văn A'),
+                  _buildTextField('Nhập họ và tên', _nameController),
                   const SizedBox(height: 20),
                   _buildLabel('Địa chỉ email'),
-                  _buildTextField('vi-du@email.com'),
+                  _buildTextField('Ví dụ: email@domain.com', _emailController),
                   const SizedBox(height: 20),
                   _buildLabel('Tiêu đề'),
                   Container(
@@ -324,7 +411,7 @@ class SupportRequestScreen extends StatelessWidget {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         isExpanded: true,
-                        value: 'Chọn chủ đề hỗ trợ',
+                        value: _selectedSubject,
                         icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
                         items: ['Chọn chủ đề hỗ trợ', 'Báo cáo sự cố', 'Góp ý tính năng', 'Tài khoản', 'Khác'].map((String value) {
                           return DropdownMenuItem<String>(
@@ -332,25 +419,32 @@ class SupportRequestScreen extends StatelessWidget {
                             child: Text(value, style: TextStyle(fontSize: 14, color: value == 'Chọn chủ đề hỗ trợ' ? const Color(0xFF424242) : const Color(0xFF1B263B))),
                           );
                         }).toList(),
-                        onChanged: (_) {},
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _selectedSubject = newValue;
+                            });
+                          }
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
                   _buildLabel('Nội dung tin nhắn'),
-                  _buildTextField('Bạn cần chúng tôi giúp gì?', maxLines: 5),
+                  _buildTextField('Bạn cần chúng tôi giúp gì?', _messageController, maxLines: 5),
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                      label: const Text('Gửi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      onPressed: _isLoading ? null : _submitRequest,
+                      icon: _isLoading 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      label: Text(_isLoading ? 'Đang gửi...' : 'Gửi', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4A745B),
+                        disabledBackgroundColor: Colors.grey[400],
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         elevation: 0,
                       ),
@@ -377,8 +471,9 @@ class SupportRequestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String hint, {int maxLines = 1}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1}) {
     return TextField(
+      controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
@@ -435,3 +530,4 @@ class SupportRequestScreen extends StatelessWidget {
     );
   }
 }
+

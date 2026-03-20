@@ -14,12 +14,7 @@ import 'help_screen.dart';
 import 'change_password_screen.dart';
 import '../../providers/theme_provider.dart';
 
-final userProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) return {};
-  final data = await Supabase.instance.client.from('users').select().eq('id', user.id).maybeSingle();
-  return data ?? {};
-});
+import '../../providers/user_profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

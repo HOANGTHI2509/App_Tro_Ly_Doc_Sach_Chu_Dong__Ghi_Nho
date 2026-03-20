@@ -11,6 +11,7 @@ import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We wi
 import 'package:reading_station_app/views/library/library_screen.dart';
 import 'package:reading_station_app/services/notification_service.dart';
 import 'package:reading_station_app/providers/theme_provider.dart';
+import 'package:reading_station_app/views/admin/admin_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,11 +61,49 @@ class MyApp extends ConsumerWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasData) {
-            return const MainScreen();
+            return AuthWrapper(user: snapshot.data!);
           }
           return const LoginScreen();
         },
       ),
+    );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  final User user;
+  const AuthWrapper({super.key, required this.user});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  late Future<Map<String, dynamic>?> _roleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _roleFuture = Supabase.instance.client
+        .from('users')
+        .select('role')
+        .eq('id', widget.user.id)
+        .maybeSingle();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _roleFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFFFA6400))));
+        }
+        if (snapshot.hasData && snapshot.data!['role'] == 'admin') {
+          return const AdminMainScreen();
+        }
+        return const MainScreen();
+      },
     );
   }
 }

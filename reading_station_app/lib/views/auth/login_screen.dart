@@ -81,6 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(color: inputBg, borderRadius: BorderRadius.circular(24)),
                 child: TextField(
                   controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.black54),
                     hintText: 'email@example.com',
@@ -100,6 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  keyboardType: TextInputType.visiblePassword,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
                     suffixIcon: IconButton(

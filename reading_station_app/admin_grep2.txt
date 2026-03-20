@@ -1,0 +1,2 @@
+﻿origin/feature-community:logs/analyze_output.txt
+origin/feature-community:logs/err.txt

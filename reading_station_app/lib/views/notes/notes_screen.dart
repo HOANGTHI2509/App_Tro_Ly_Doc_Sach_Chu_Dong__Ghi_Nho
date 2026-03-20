@@ -9,6 +9,7 @@ import 'note_details_screen.dart';
 import 'widgets/create_flashcard_bottom_sheet.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../profile/profile_screen.dart';
+import '../../providers/user_profile_provider.dart';
 
 class NotesScreen extends ConsumerStatefulWidget {
   const NotesScreen({super.key});

@@ -5,6 +5,7 @@ import '../../providers/library_provider.dart';
 import 'scanner/scanner_screen.dart';
 import 'search_book_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../providers/user_profile_provider.dart';
 import 'widgets/book_item.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
