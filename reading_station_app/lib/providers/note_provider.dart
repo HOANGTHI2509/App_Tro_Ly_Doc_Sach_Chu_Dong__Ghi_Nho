@@ -27,7 +27,7 @@ class NoteController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<void> addNote(String userBookId, String content, {String? question, int? pageNumber, String? imageUrl, bool? isKeyTakeaway}) async {
+  Future<void> addNote(String userBookId, String content, {String? question, int? pageNumber, String? imageUrl, bool? isKeyTakeaway, List<String>? tags}) async {
     state = const AsyncLoading();
     try {
       final repository = ref.read(noteRepositoryProvider);
@@ -40,6 +40,7 @@ class NoteController extends AsyncNotifier<void> {
         imageUrl: imageUrl,
         isKeyTakeaway: isKeyTakeaway,
         createdAt: DateTime.now(),
+        tags: tags,
       );
       
       await repository.addNote(newNote);
@@ -54,10 +55,10 @@ class NoteController extends AsyncNotifier<void> {
     }
   }
 
-  Future<void> updateNote(String noteId, String content) async {
+  Future<void> updateNote(String noteId, String content, {List<String>? tags}) async {
     state = const AsyncLoading();
     try {
-      await ref.read(noteRepositoryProvider).updateNote(noteId, content);
+      await ref.read(noteRepositoryProvider).updateNote(noteId, content, tags: tags);
       ref.invalidate(allNotesProvider);
       state = const AsyncData(null);
     } catch (e, st) {
@@ -65,9 +66,9 @@ class NoteController extends AsyncNotifier<void> {
     }
   }
 
-  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question}) async {
+  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question, String? answer}) async {
     try {
-      await ref.read(noteRepositoryProvider).toggleFlashcardStatus(noteId, isFlashcard, question: question);
+      await ref.read(noteRepositoryProvider).toggleFlashcardStatus(noteId, isFlashcard, question: question, answer: answer);
       ref.invalidate(allNotesProvider);
       
       // Quan trọng: Invalidate các provider bên phía Ôn tập

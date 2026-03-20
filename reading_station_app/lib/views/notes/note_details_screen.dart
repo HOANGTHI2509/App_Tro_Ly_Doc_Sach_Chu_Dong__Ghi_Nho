@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../../models/note.dart';
 import '../../../providers/note_provider.dart';
 
@@ -15,11 +17,13 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
   late TextEditingController _contentController;
   final Color _primaryGreen = const Color(0xFF568164);
   bool _isBold = false;
+  late List<String> _selectedTags;
 
   @override
   void initState() {
     super.initState();
     _contentController = TextEditingController(text: widget.note.content);
+    _selectedTags = widget.note.tags != null ? List.from(widget.note.tags!) : [];
   }
 
   @override
@@ -32,7 +36,11 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
     if (_contentController.text.trim().isEmpty) return;
     
     try {
-      await ref.read(noteControllerProvider.notifier).updateNote(widget.note.id, _contentController.text.trim());
+      await ref.read(noteControllerProvider.notifier).updateNote(
+        widget.note.id, 
+        _contentController.text.trim(),
+        tags: _selectedTags.isEmpty ? null : _selectedTags,
+      );
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã cập nhật ghi chú thành công!')));
@@ -42,6 +50,98 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
+  }
+
+  void _insertFormatting(String prefix, String suffix) {
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    if (selection.baseOffset == -1 || selection.extentOffset == -1) {
+      final newText = text + prefix + suffix;
+      _contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length - suffix.length),
+      );
+    } else {
+      final start = selection.start;
+      final end = selection.end;
+      final selectedText = text.substring(start, end);
+      final newText = text.replaceRange(start, end, '$prefix$selectedText$suffix');
+      
+      _contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: start + prefix.length + selectedText.length),
+      );
+    }
+  }
+
+  Future<void> _scanText() async {
+    final picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đang xử lý hình ảnh...')));
+        
+        final inputImage = InputImage.fromFilePath(image.path);
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        
+        final String text = recognizedText.text;
+        if (text.isNotEmpty) {
+           setState(() {
+              _contentController.text = _contentController.text + (_contentController.text.isNotEmpty ? '\n' : '') + text;
+           });
+           if (mounted) {
+             ScaffoldMessenger.of(context).hideCurrentSnackBar();
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã quét và thêm văn bản!')));
+           }
+        } else {
+           if (mounted) {
+             ScaffoldMessenger.of(context).hideCurrentSnackBar();
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy văn bản trong ảnh.')));
+           }
+        }
+        textRecognizer.close();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi quét: $e')));
+    }
+  }
+
+  void _showAddTagDialog() {
+    final TextEditingController tagController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thêm Nhãn Mới', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: tagController,
+          decoration: const InputDecoration(
+            hintText: 'Nhập tên nhãn (vd: #quan-trong)',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              final newTag = tagController.text.trim();
+              if (newTag.isNotEmpty) {
+                final formattedTag = newTag.startsWith('#') ? newTag : '#$newTag';
+                if (!_selectedTags.contains(formattedTag)) {
+                  setState(() => _selectedTags.add(formattedTag));
+                }
+              }
+              Navigator.pop(context);
+            },
+            child: Text('Thêm', style: TextStyle(fontWeight: FontWeight.bold, color: _primaryGreen)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -120,17 +220,19 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _buildTag('# Cảm nhận'),
-                    const SizedBox(width: 10),
-                    _buildTag('# ${widget.note.bookTitle}'),
-                    const SizedBox(width: 10),
+                    ..._selectedTags.map((tag) => _buildTag(tag, onDeleted: () {
+                      setState(() => _selectedTags.remove(tag));
+                    })),
                     IconButton(
                       icon: const Icon(Icons.add_circle, color: Colors.grey, size: 28),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng thêm Thẻ đang được phát triển!')));
-                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: _showAddTagDialog,
                     ),
                   ],
                 ),
@@ -159,23 +261,18 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(icon: Icon(Icons.crop_free, color: _primaryGreen), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mở OCR / Quét văn bản...')));
-                  }),
+                  IconButton(icon: Icon(Icons.crop_free, color: _primaryGreen), onPressed: _scanText),
                   IconButton(icon: Icon(Icons.image_outlined, color: _primaryGreen), onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chọn ảnh từ thư viện...')));
                   }),
-                  IconButton(icon: Icon(Icons.mic_none, color: _primaryGreen), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đang lắng nghe giọng nói...')));
-                  }),
-                  IconButton(icon: Icon(Icons.checklist, color: _primaryGreen), onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo danh sách kiểm tra...')));
-                  }),
+                  IconButton(icon: Icon(Icons.format_italic, color: _primaryGreen), onPressed: () => _insertFormatting('*', '*')),
+                  IconButton(icon: Icon(Icons.format_list_bulleted, color: _primaryGreen), onPressed: () => _insertFormatting('\n- ', '')),
                   const VerticalDivider(width: 1, indent: 20, endIndent: 20, color: Colors.grey),
                   IconButton(
                     icon: Icon(Icons.format_bold, color: _isBold ? Colors.black : _primaryGreen), 
                     onPressed: () {
                       setState(() => _isBold = !_isBold);
+                      _insertFormatting('**', '**');
                     }
                   ),
                 ],
@@ -187,15 +284,27 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
     );
   }
 
-  Widget _buildTag(String label) {
+  Widget _buildTag(String label, {VoidCallback? onDeleted}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.only(left: 14, right: 8, top: 6, bottom: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFF1EDE6),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _primaryGreen)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _primaryGreen)),
+          if (onDeleted != null) ...[
+            const SizedBox(width: 4),
+            InkWell(
+              onTap: onDeleted,
+              child: const Icon(Icons.close, size: 16, color: Colors.grey),
+            ),
+          ]
+        ],
+      ),
     );
   }
 }

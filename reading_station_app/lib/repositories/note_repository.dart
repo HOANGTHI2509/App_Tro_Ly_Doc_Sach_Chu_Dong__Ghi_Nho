@@ -59,10 +59,11 @@ class NoteRepository {
     }
   }
 
-  Future<void> updateNote(String noteId, String content, {String? question}) async {
+  Future<void> updateNote(String noteId, String content, {String? question, List<String>? tags}) async {
     try {
-      final updates = {'content': content};
+      final Map<String, dynamic> updates = {'content': content};
       if (question != null) updates['question'] = question;
+      if (tags != null) updates['tags'] = tags;
       
       await _client
           .from('notes')
@@ -74,11 +75,14 @@ class NoteRepository {
     }
   }
 
-  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question}) async {
+  Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question, String? answer}) async {
     try {
       final Map<String, dynamic> updates = {'is_key_takeaway': isFlashcard};
       if (isFlashcard && question != null) {
         updates['question'] = question;
+      }
+      if (answer != null) {
+        updates['content'] = answer;
       }
       
       await _client

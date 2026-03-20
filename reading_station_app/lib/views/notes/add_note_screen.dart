@@ -4,6 +4,8 @@ import '../../../models/user_book.dart';
 import '../../../providers/library_provider.dart';
 import '../../../providers/note_provider.dart';
 import '../../../providers/nav_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class AddNoteScreen extends ConsumerStatefulWidget {
   const AddNoteScreen({super.key});
@@ -18,6 +20,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   final TextEditingController _pageController = TextEditingController(text: '0');
   final Color _primaryGreen = const Color(0xFF568164);
   int _wordCount = 0;
+  List<String> _selectedTags = [];
 
   @override
   void initState() {
@@ -30,6 +33,76 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     setState(() {
       _wordCount = text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
     });
+  }
+
+  void _toggleTag(String tag) {
+    setState(() {
+      if (_selectedTags.contains(tag)) {
+        _selectedTags.remove(tag);
+      } else {
+        _selectedTags.add(tag);
+      }
+    });
+  }
+
+  void _insertFormatting(String prefix, String suffix) {
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    
+    // Nếu chưa có selection cụ thể
+    if (selection.baseOffset == -1 || selection.extentOffset == -1) {
+      final newText = text + prefix + suffix;
+      _contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length - suffix.length),
+      );
+    } else {
+      final start = selection.start;
+      final end = selection.end;
+      final selectedText = text.substring(start, end);
+      final newText = text.replaceRange(start, end, '$prefix$selectedText$suffix');
+      
+      _contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: start + prefix.length + selectedText.length),
+      );
+    }
+    _updateWordCount();
+  }
+
+  Future<void> _scanText() async {
+    final picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đang xử lý hình ảnh...')));
+        
+        final inputImage = InputImage.fromFilePath(image.path);
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        
+        final String text = recognizedText.text;
+        if (text.isNotEmpty) {
+           setState(() {
+              _contentController.text = _contentController.text + (_contentController.text.isNotEmpty ? '\n' : '') + text;
+           });
+           _updateWordCount();
+           if (mounted) {
+             ScaffoldMessenger.of(context).hideCurrentSnackBar();
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã quét và thêm văn bản!')));
+           }
+        } else {
+           if (mounted) {
+             ScaffoldMessenger.of(context).hideCurrentSnackBar();
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy văn bản trong ảnh.')));
+           }
+        }
+        textRecognizer.close();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi quét: $e')));
+    }
   }
 
   @override
@@ -60,6 +133,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             _contentController.text.trim(),
             pageNumber: int.tryParse(_pageController.text),
             isKeyTakeaway: false, // Normal note by default
+            tags: _selectedTags.isEmpty ? null : _selectedTags,
           );
       if (mounted) {
         Navigator.pop(context);
@@ -76,10 +150,58 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     }
   }
 
+  void _showAddTagDialog() {
+    final TextEditingController tagController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thêm Nhãn Mới', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: tagController,
+          decoration: const InputDecoration(
+            hintText: 'Nhập tên nhãn (vd: #quan-trong)',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              final newTag = tagController.text.trim();
+              if (newTag.isNotEmpty) {
+                final formattedTag = newTag.startsWith('#') ? newTag : '#$newTag';
+                if (!_selectedTags.contains(formattedTag)) {
+                  setState(() => _selectedTags.add(formattedTag));
+                }
+              }
+              Navigator.pop(context);
+            },
+            child: Text('Thêm', style: TextStyle(fontWeight: FontWeight.bold, color: _primaryGreen)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final libraryAsync = ref.watch(userBooksProvider);
     final navIndex = ref.watch(navProvider).value ?? 1; // Default to Notes tab if we used it
+    final notesAsync = ref.watch(allNotesProvider);
+    
+    final List<String> availableTags = notesAsync.when(
+      data: (notes) {
+        final tags = notes.expand((n) => n.tags ?? <String>[]).toSet().toList();
+        if (tags.isEmpty) return ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'];
+        return tags;
+      },
+      loading: () => ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'],
+      error: (_,__) => ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'],
+    );
+    final displayTags = {...availableTags, ..._selectedTags}.toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF9F6),
@@ -211,7 +333,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: _scanText,
                   icon: const Icon(Icons.camera_alt, color: Color(0xFF212529), size: 18),
                   label: const Text('Quét văn bản', style: TextStyle(color: Color(0xFF212529), fontWeight: FontWeight.bold, fontSize: 13)),
                   style: ElevatedButton.styleFrom(
@@ -261,10 +383,10 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   const Divider(),
                   Row(
                     children: [
-                      _buildToolbarIcon(Icons.format_bold),
-                      _buildToolbarIcon(Icons.format_italic),
-                      _buildToolbarIcon(Icons.format_list_bulleted),
-                      _buildToolbarIcon(Icons.format_quote),
+                      _buildToolbarIcon(Icons.format_bold, () => _insertFormatting('**', '**')),
+                      _buildToolbarIcon(Icons.format_italic, () => _insertFormatting('*', '*')),
+                      _buildToolbarIcon(Icons.format_list_bulleted, () => _insertFormatting('\n- ', '')),
+                      _buildToolbarIcon(Icons.format_quote, () => _insertFormatting('\n> ', '')),
                       const Spacer(),
                       Text('$_wordCount TỪ', style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                     ],
@@ -280,13 +402,16 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildTagChip('#tamlyhoc'),
-                  const SizedBox(width: 8),
-                  _buildTagChip('#thoi_quen'),
-                  const SizedBox(width: 8),
-                  _buildTagChip('#trichdan'),
-                  const SizedBox(width: 8),
-                  _buildTagChip('#kienthuc'),
+                   ...displayTags.map((tag) => Padding(
+                     padding: const EdgeInsets.only(right: 8), 
+                     child: _buildTagChip(tag),
+                   )),
+                   IconButton(
+                     icon: Icon(Icons.add_circle, color: _primaryGreen, size: 28),
+                     onPressed: _showAddTagDialog,
+                     padding: EdgeInsets.zero,
+                     constraints: const BoxConstraints(),
+                   ),
                 ],
               ),
             ),
@@ -317,21 +442,33 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     );
   }
 
-  Widget _buildToolbarIcon(IconData icon) {
+  Widget _buildToolbarIcon(IconData icon, VoidCallback onPressed) {
     return IconButton(
       icon: Icon(icon, color: Colors.black54, size: 20),
-      onPressed: () {},
+      onPressed: onPressed,
     );
   }
 
   Widget _buildTagChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFECE5).withOpacity(0.7),
-        borderRadius: BorderRadius.circular(20),
+    final isSelected = _selectedTags.contains(label);
+    return InkWell(
+      onTap: () => _toggleTag(label),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? _primaryGreen : const Color(0xFFEFECE5).withOpacity(0.7),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label, 
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey, 
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+          )
+        ),
       ),
-      child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
     );
   }
 

@@ -175,62 +175,161 @@ class _UserBookDetailsScreenState extends ConsumerState<UserBookDetailsScreen> {
 
   void _showQuickNoteBottomSheet() {
     final noteController = TextEditingController();
+    List<String> selectedTags = [];
     
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20, right: 20, top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Thêm ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryGreen)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteController,
-                maxLines: 4,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Nhập nội dung ghi chú...',
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (noteController.text.trim().isNotEmpty) {
-                      await ref.read(noteControllerProvider.notifier).addNote(
-                        _currentBook.id, 
-                        noteController.text.trim(),
-                        pageNumber: int.tryParse(_progressController.text)
-                      );
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm ghi chú!')));
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryGreen,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            final notesAsync = ref.read(allNotesProvider);
+            final List<String> availableTags = notesAsync.when(
+              data: (notes) {
+                final tags = notes.expand((n) => n.tags ?? <String>[]).toSet().toList();
+                return tags.isEmpty ? ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'] : tags;
+              },
+              loading: () => ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'],
+              error: (_,__) => ['#tamlyhoc', '#thoi_quen', '#trichdan', '#kienthuc'],
+            );
+            final displayTags = {...availableTags, ...selectedTags}.toList();
+
+            void toggleTag(String tag) {
+              setModalState(() {
+                if (selectedTags.contains(tag)) {
+                  selectedTags.remove(tag);
+                } else {
+                  selectedTags.add(tag);
+                }
+              });
+            }
+
+            void showAddTagDialog() {
+              final TextEditingController tagController = TextEditingController();
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Thêm Nhãn Mới', style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: TextField(
+                    controller: tagController,
+                    decoration: const InputDecoration(hintText: 'Nhập tên nhãn (vd: #quan-trong)'),
+                    autofocus: true,
                   ),
-                  child: const Text('Lưu ghi chú', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+                    TextButton(
+                      onPressed: () {
+                        final newTag = tagController.text.trim();
+                        if (newTag.isNotEmpty) {
+                          final formattedTag = newTag.startsWith('#') ? newTag : '#$newTag';
+                          if (!selectedTags.contains(formattedTag)) {
+                            setModalState(() => selectedTags.add(formattedTag));
+                          }
+                        }
+                        Navigator.pop(context);
+                      },
+                      child: Text('Thêm', style: TextStyle(fontWeight: FontWeight.bold, color: _primaryGreen)),
+                    ),
+                  ],
                 ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20, right: 20, top: 20,
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Thêm ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primaryGreen)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: noteController,
+                    maxLines: 4,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Nhập nội dung ghi chú...',
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('GỢI Ý:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.0)),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                         ...displayTags.map((tag) {
+                           final isSelected = selectedTags.contains(tag);
+                           return Padding(
+                             padding: const EdgeInsets.only(right: 8), 
+                             child: InkWell(
+                               onTap: () => toggleTag(tag),
+                               borderRadius: BorderRadius.circular(20),
+                               child: Container(
+                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                 decoration: BoxDecoration(
+                                   color: isSelected ? _primaryGreen : const Color(0xFFEFECE5).withOpacity(0.7),
+                                   borderRadius: BorderRadius.circular(20),
+                                 ),
+                                 child: Text(
+                                   tag, 
+                                   style: TextStyle(
+                                     color: isSelected ? Colors.white : Colors.grey, 
+                                     fontSize: 13,
+                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                                   )
+                                 ),
+                               ),
+                             )
+                           );
+                         }),
+                         IconButton(
+                           icon: Icon(Icons.add_circle, color: _primaryGreen, size: 28),
+                           onPressed: showAddTagDialog,
+                           padding: EdgeInsets.zero,
+                           constraints: const BoxConstraints(),
+                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (noteController.text.trim().isNotEmpty) {
+                          await ref.read(noteControllerProvider.notifier).addNote(
+                            _currentBook.id, 
+                            noteController.text.trim(),
+                            pageNumber: int.tryParse(_progressController.text),
+                            tags: selectedTags.isEmpty ? null : selectedTags,
+                          );
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm ghi chú!')));
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primaryGreen,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Lưu ghi chú', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          }
         );
       }
     );

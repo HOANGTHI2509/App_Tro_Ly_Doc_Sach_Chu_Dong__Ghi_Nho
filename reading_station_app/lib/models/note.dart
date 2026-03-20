@@ -18,6 +18,7 @@ class Note {
   final int interval; // days
   final double easeFactor;
   final int repetitionCount;
+  final List<String>? tags;
 
   Note({
     required this.id,
@@ -36,6 +37,7 @@ class Note {
     this.interval = 0,
     this.easeFactor = 2.5,
     this.repetitionCount = 0,
+    this.tags,
   });
 
   factory Note.fromSupabase(Map<String, dynamic> data) {
@@ -60,6 +62,7 @@ class Note {
       interval: data['review_interval'] ?? 0,
       easeFactor: (data['ease_factor'] ?? 2.5).toDouble(),
       repetitionCount: data['repetition_count'] ?? 0,
+      tags: data['tags'] != null ? List<String>.from(data['tags']) : null,
     );
   }
 
@@ -78,6 +81,7 @@ class Note {
       'review_interval': interval,
       'ease_factor': easeFactor,
       'repetition_count': repetitionCount,
+      if (tags != null) 'tags': tags,
     };
   }
 
@@ -94,6 +98,7 @@ class Note {
     int? interval,
     double? easeFactor,
     int? repetitionCount,
+    List<String>? tags,
   }) {
     return Note(
       id: id,
@@ -111,6 +116,7 @@ class Note {
       interval: interval ?? this.interval,
       easeFactor: easeFactor ?? this.easeFactor,
       repetitionCount: repetitionCount ?? this.repetitionCount,
+      tags: tags ?? this.tags,
     );
   }
 }

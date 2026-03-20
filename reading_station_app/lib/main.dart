@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:reading_station_app/controllers/auth_controller.dart';
 import 'package:reading_station_app/views/auth/login_screen.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We will keep our MainScreen)
 // The remote imported features/library/library_page.dart, but our MainScreen is likely the current source of truth for navigation.
@@ -35,7 +36,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFA6400), primary: const Color(0xFFFA6400)),
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0, iconTheme: IconThemeData(color: Colors.black)),
-        fontFamily: 'Roboto',
+        textTheme: GoogleFonts.beVietnamProTextTheme(Theme.of(context).textTheme),
       ),
       home: StreamBuilder<User?>(
         stream: AuthController().authStateChanges,
