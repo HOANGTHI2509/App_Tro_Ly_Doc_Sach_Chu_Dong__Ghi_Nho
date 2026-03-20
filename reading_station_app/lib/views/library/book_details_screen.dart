@@ -44,16 +44,6 @@ class BookDetailsScreen extends ConsumerWidget {
         ),
         title: const Text('Chi tiết sách', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFFF1EDE6),
-              child: const Icon(Icons.person, size: 20, color: Color(0xFF568164)),
-            ),
-          )
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -115,42 +105,27 @@ class BookDetailsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 30),
 
-            // Hai thẻ: Tiến độ & Vị trí
             if (inLibrary)
-              Row(
-                children: [
-                  Expanded(child: _buildProgressCard(progress)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildLocationCard(location)),
-                ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEBE3D5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.check_circle, color: Color(0xFF5D4037)),
+                    SizedBox(width: 8),
+                    Text('Đã có trong tủ sách', style: TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
               )
             else 
               _buildAddToLibraryButton(context, ref),
 
-            const SizedBox(height: 20),
-
-            // Hai nút: Ghi chú nhanh & Cho mượn
-            if (inLibrary)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.edit_note_rounded,
-                      label: 'Ghi chú nhanh',
-                      onTap: () {},
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.menu_book,
-                      label: 'Cho mượn',
-                      onTap: () {},
-                    ),
-                  ),
-                ],
-              ),
-            
             const SizedBox(height: 40),
 
             // Thông tin chi tiết

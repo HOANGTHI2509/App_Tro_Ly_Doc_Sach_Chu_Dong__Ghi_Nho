@@ -55,23 +55,26 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
   void _insertFormatting(String prefix, String suffix) {
     final text = _contentController.text;
     final selection = _contentController.selection;
-    if (selection.baseOffset == -1 || selection.extentOffset == -1) {
-      final newText = text + prefix + suffix;
-      _contentController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(offset: newText.length - suffix.length),
-      );
+    
+    String newText;
+    TextSelection newSelection;
+
+    if (!selection.isValid || selection.start < 0) {
+      newText = text + prefix + suffix;
+      newSelection = TextSelection.collapsed(offset: newText.length - suffix.length);
     } else {
       final start = selection.start;
       final end = selection.end;
       final selectedText = text.substring(start, end);
-      final newText = text.replaceRange(start, end, '$prefix$selectedText$suffix');
-      
-      _contentController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(offset: start + prefix.length + selectedText.length),
-      );
+      newText = text.replaceRange(start, end, '$prefix$selectedText$suffix');
+      newSelection = TextSelection.collapsed(offset: start + prefix.length + selectedText.length);
     }
+
+    _contentController.value = _contentController.value.copyWith(
+      text: newText,
+      selection: newSelection,
+      composing: TextRange.empty,
+    );
   }
 
   Future<void> _scanText() async {
@@ -88,9 +91,15 @@ class _NoteDetailsScreenState extends ConsumerState<NoteDetailsScreen> {
         
         final String text = recognizedText.text;
         if (text.isNotEmpty) {
-           setState(() {
-              _contentController.text = _contentController.text + (_contentController.text.isNotEmpty ? '\n' : '') + text;
-           });
+           final currentText = _contentController.text;
+           final newText = currentText + (currentText.isNotEmpty ? '\n' : '') + text;
+           
+           _contentController.value = _contentController.value.copyWith(
+             text: newText,
+             selection: TextSelection.collapsed(offset: newText.length),
+             composing: TextRange.empty,
+           );
+           
            if (mounted) {
              ScaffoldMessenger.of(context).hideCurrentSnackBar();
              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã quét và thêm văn bản!')));

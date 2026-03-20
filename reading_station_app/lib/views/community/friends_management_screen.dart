@@ -21,7 +21,7 @@ class FriendsManagementScreen extends ConsumerWidget {
         backgroundColor: _bgBeige,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.menu, color: _primaryGreen),
+          icon: Icon(Icons.arrow_back_ios_new, color: _primaryGreen),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -60,65 +60,31 @@ class FriendsManagementScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Top Stats Cards
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    height: 160,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: _primaryGreen,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cộng đồng đọc\nsách của bạn',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        Spacer(),
-                        Text(
-                          '128 người bạn đang trực tuyến',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
+                Container(
+                  height: 160,
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: _primaryGreen,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Cộng đồng đọc\nsách của bạn',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${friendsAsync.asData?.value.length ?? 0} người bạn đang trực tuyến',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    height: 160,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: _goldBeige,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${pendingAsync.asData?.value.length ?? 0}',
-                          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 32),
-                        ),
-                        const Text(
-                          'YÊU CẦU\nMỚI',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
 
             const SizedBox(height: 32),
-            // Pending Requests Section
-            _buildPendingRequestsSection(context, ref),
 
             Text(
               'Danh sách bạn bè',
@@ -131,7 +97,7 @@ class FriendsManagementScreen extends ConsumerWidget {
               data: (friends) {
                 if (friends.isEmpty) return const Text('Bạn chưa có người bạn nào.');
                 return Column(
-                  children: friends.map((f) => _buildFriendCard(f)).toList(),
+                  children: friends.map((f) => _buildFriendCard(context, ref, f)).toList(),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -149,9 +115,11 @@ class FriendsManagementScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFriendCard(Map<String, dynamic> friendship) {
+  Widget _buildFriendCard(BuildContext context, WidgetRef ref, Map<String, dynamic> friendship) {
     final friend = friendship['friend'] ?? {};
     final name = friend['name'] ?? 'Người dùng';
+    final friendshipId = friendship['id'];
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -200,7 +168,55 @@ class FriendsManagementScreen extends ConsumerWidget {
               ],
             ),
           ),
-          Icon(Icons.person_remove_outlined, color: Colors.grey[400]),
+          IconButton(
+            icon: Icon(Icons.person_remove_outlined, color: Colors.grey[400]),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: const Color(0xFFF9F7F2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  title: const Text(
+                    'Xóa kết bạn', 
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Serif', fontWeight: FontWeight.bold, color: Color(0xFF79A385), fontSize: 22)
+                  ),
+                  content: Text(
+                    'Bạn có chắc chắn muốn hủy kết bạn với $name không?',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFF616161), fontSize: 15, height: 1.4)
+                  ),
+                  actionsAlignment: MainAxisAlignment.center,
+                  actionsPadding: const EdgeInsets.only(bottom: 24, top: 12),
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx), 
+                      child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16))
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD32F2F),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                      onPressed: () {
+                        ref.read(communityControllerProvider.notifier).removeFriend(friendshipId);
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã hủy kết bạn với $name')));
+                      },
+                      child: const Text('Chắc chắn xóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -213,7 +229,7 @@ class FriendsManagementScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F1ED),
+        color: const Color(0xFFF7F3EA), // Match the beige background from the design
         borderRadius: BorderRadius.circular(32),
       ),
       child: Column(
@@ -221,19 +237,23 @@ class FriendsManagementScreen extends ConsumerWidget {
         children: [
           const Text(
             'Gợi ý bạn bè',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5D5144), fontFamily: 'Serif'),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           suggestedAsync.when(
             data: (users) {
               if (users.isEmpty) return const Text('Hiện chưa có gợi ý mới.', style: TextStyle(fontSize: 13, color: Color(0xFF9E9E9E)));
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: users.map((u) => Padding(
-                    padding: const EdgeInsets.only(right: 20),
-                    child: _buildSuggestionItem(context, ref, u),
-                  )).toList(),
+              return SizedBox(
+                height: 160, // Increased height to prevent overflow
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 24),
+                      child: _buildSuggestionItem(context, ref, users[index]),
+                    );
+                  },
                 ),
               );
             },
@@ -245,100 +265,56 @@ class FriendsManagementScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingRequestsSection(BuildContext context, WidgetRef ref) {
-    final pendingAsync = ref.watch(pendingRequestsProvider);
-
-    return pendingAsync.when(
-      data: (requests) {
-        if (requests.isEmpty) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Lời mời kết bạn',
-              style: TextStyle(color: _primaryGreen.withOpacity(0.8), fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ...requests.map((r) => _buildPendingRequestCard(context, ref, r)),
-            const SizedBox(height: 32),
-          ],
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildPendingRequestCard(BuildContext context, WidgetRef ref, Map<String, dynamic> request) {
-    final sender = request['friend'] ?? {};
-    final name = sender['name'] ?? 'Người dùng';
-    final friendshipId = request['id'];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _goldBeige.withOpacity(0.5)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-             radius: 25,
-             backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=$name&background=random'),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(communityControllerProvider.notifier).acceptRequest(friendshipId);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã chấp nhận lời mời của $name')));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primaryGreen,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              minimumSize: const Size(80, 32),
-            ),
-            child: const Text('Chấp nhận', style: TextStyle(color: Colors.white, fontSize: 12)),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSuggestionItem(BuildContext context, WidgetRef ref, Map<String, dynamic> user) {
     final name = user['name'] ?? 'Người dùng';
     final userId = user['id'];
+    
+    final localSentSet = ref.watch(localSentRequestsProvider);
+    final isSent = localSentSet.contains(userId);
 
     return Column(
       children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: _primaryGreen.withOpacity(0.1),
-          backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=$name&background=random'),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFF79A385), width: 2), // Green border
+            color: Colors.white,
+          ),
+          child: CircleAvatar(
+            radius: 36,
+            backgroundColor: const Color(0xFF79A385).withOpacity(0.1),
+            backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=$name&background=random'),
+          ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         SizedBox(
-          width: 70,
-          child: Text(name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          width: 80,
+          child: Text(name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
         ),
         const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: () {
-            ref.read(communityControllerProvider.notifier).sendFriendRequest(userId);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã gửi lời mời tới $name')));
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _primaryGreen.withOpacity(0.8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            minimumSize: const Size(60, 24),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            elevation: 0,
+        SizedBox(
+          width: 76, // Makes the button match the image perfectly
+          height: 28,
+          child: ElevatedButton(
+            onPressed: () {
+              if (isSent) {
+                ref.read(communityControllerProvider.notifier).cancelFriendRequestInSuggestion(userId);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã hủy yêu cầu tới $name')));
+              } else {
+                ref.read(communityControllerProvider.notifier).sendFriendRequest(userId);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã gửi lời mời tới $name')));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isSent ? const Color(0xFFE0E0E0) : const Color(0xFF4F7E60),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            child: Text(isSent ? 'Đã gửi' : 'Thêm', style: TextStyle(color: isSent ? const Color(0xFF9E9E9E) : Colors.white, fontSize: 12, fontWeight: isSent ? FontWeight.bold : FontWeight.normal)),
           ),
-          child: const Text('Thêm', style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 11)),
         ),
       ],
     );

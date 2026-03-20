@@ -103,12 +103,37 @@ class ActivityRepository {
       
       print('[ActivityRepo] Raw feed count: ${(data as List).length}');
 
+      // Lấy danh sách activity id mà user hiện tại đã like
+      final myLikesResp = await _client.from('activity_likes').select('activity_id').eq('user_id', _userId).catchError((_) => []);
+      final myLikedActivities = (myLikesResp as List).map((e) => e['activity_id']).toSet();
+
+      // Đếm lượt like thời gian thực
+      final activityIds = data.map((e) => e['id']).toList();
+      final allLikesResp = await _client.from('activity_likes').select('activity_id').inFilter('activity_id', activityIds).catchError((_) => []);
+      final Map<String, int> likesCountMap = {};
+      for (final row in (allLikesResp as List)) {
+        final aid = row['activity_id'].toString();
+        likesCountMap[aid] = (likesCountMap[aid] ?? 0) + 1;
+      }
+
+      // Đếm lượt cmt thời gian thực
+      final allCmtsResp = await _client.from('activity_comments').select('activity_id').inFilter('activity_id', activityIds).catchError((_) => []);
+      final Map<String, int> cmtsCountMap = {};
+      for (final row in (allCmtsResp as List)) {
+        final aid = row['activity_id'].toString();
+        cmtsCountMap[aid] = (cmtsCountMap[aid] ?? 0) + 1;
+      }
+
       // Gắn thông tin user vào mỗi activity
       final results = <Map<String, dynamic>>[];
       for (final row in List<Map<String, dynamic>>.from(data)) {
         final userInfo = await _getUserById(row['user_id']);
         if (userInfo != null) {
           row['user'] = userInfo;
+          row['is_liked'] = myLikedActivities.contains(row['id']);
+          // Override counter hiển thị
+          row['likes'] = likesCountMap[row['id'].toString()] ?? 0;
+          row['comments'] = cmtsCountMap[row['id'].toString()] ?? 0;
           results.add(row);
         }
       }
@@ -163,66 +188,119 @@ class ActivityRepository {
     }
   }
 
-  /// Like một hoạt động (Ghi nhận vào bảng activity_likes và cập nhật counters)
+  /// Like / Unlike một hoạt động
   Future<void> likeActivity(String activityId) async {
     try {
       final userId = _userId;
       
-      // 1. Thêm vào bảng chi tiết (Sử dụng upsert để tránh trùng lặp)
-      try {
-        await _client.from('activity_likes').upsert({
+      // Kiểm tra xem đã like chưa
+      final existingLike = await _client
+          .from('activity_likes')
+          .select()
+          .eq('activity_id', activityId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (existingLike != null) {
+        // Đã like rồi -> unlike
+        await _client
+            .from('activity_likes')
+            .delete()
+            .eq('activity_id', activityId)
+            .eq('user_id', userId);
+            
+        // Trừ counter
+        try {
+          final response = await _client.from('activities').select('likes').eq('id', activityId).single();
+          final currentLikes = response['likes'] ?? 0;
+          if (currentLikes > 0) {
+            await _client.from('activities').update({'likes': currentLikes - 1}).eq('id', activityId);
+          }
+        } catch (_) {}
+      } else {
+        // Chưa like -> like
+        await _client.from('activity_likes').insert({
           'activity_id': activityId,
           'user_id': userId,
         });
-      } catch (e) {
-        // Có thể bảng chưa tồn tại, ta chỉ tiếp tục cập nhật counter
-        print('[ActivityRepo] Detail likes table skip: $e');
-      }
 
-      // 2. Cập nhật số lượng tổng ở bảng chính
-      final response = await _client
-          .from('activities')
-          .select('likes')
-          .eq('id', activityId)
-          .single();
-      final currentLikes = response['likes'] ?? 0;
-      await _client
-          .from('activities')
-          .update({'likes': currentLikes + 1})
-          .eq('id', activityId);
+        // Cộng counter
+        try {
+          final response = await _client.from('activities').select('likes').eq('id', activityId).single();
+          final currentLikes = response['likes'] ?? 0;
+          await _client.from('activities').update({'likes': currentLikes + 1}).eq('id', activityId);
+        } catch (_) {}
+      }
     } catch (e) {
       print('[ActivityRepo] Error liking activity: $e');
       rethrow;
     }
   }
 
-  /// Bình luận vào một hoạt động (Lưu vào activity_comments và cập nhật counters)
-  Future<void> commentOnActivity(String activityId, String content) async {
+  /// Lấy danh sách bình luận
+  Future<List<Map<String, dynamic>>> getComments(String activityId) async {
+    try {
+      final data = await _client
+          .from('activity_comments')
+          .select()
+          .eq('activity_id', activityId)
+          .order('created_at', ascending: true);
+          
+      final results = <Map<String, dynamic>>[];
+      for (final row in List<Map<String, dynamic>>.from(data)) {
+        final userInfo = await _getUserById(row['user_id']);
+        if (userInfo != null) {
+          row['user'] = userInfo;
+        }
+        results.add(row);
+      }
+      return results;
+    } catch (e) {
+      print('[ActivityRepo] Error fetching comments: $e');
+      return [];
+    }
+  }
+
+  /// Bình luận vào một hoạt động
+  Future<void> commentOnActivity(String activityId, String content, {String? parentId}) async {
     try {
       final userId = _userId;
 
+      Map<String, dynamic> insertData = {
+        'activity_id': activityId,
+        'user_id': userId,
+        'content': content,
+      };
+      if (parentId != null) {
+        insertData['parent_id'] = parentId;
+      }
+
       // 1. Lưu bình luận chi tiết
       try {
-        await _client.from('activity_comments').insert({
-          'activity_id': activityId,
-          'user_id': userId,
-          'content': content,
-        });
+        await _client.from('activity_comments').insert(insertData);
       } catch (e) {
-        print('[ActivityRepo] Detail comments table skip: $e');
+        // Fallback for when parent_id column does not exist
+        if (e.toString().contains('parent_id')) {
+           insertData.remove('parent_id');
+           await _client.from('activity_comments').insert(insertData);
+        } else {
+           print('[ActivityRepo] Detail comments table error: $e');
+        }
       }
 
       // 2. Cập nhật counter
-      final response = await _client
-          .from('activities')
-          .select('comments')
-          .eq('id', activityId)
-          .single();
-      final currentComments = response['comments'] ?? 0;
-      await _client
-          .from('activities')
-          .update({'comments': currentComments + 1})
-          .eq('id', activityId);
+      try {
+        final response = await _client
+            .from('activities')
+            .select('comments')
+            .eq('id', activityId)
+            .single();
+        final currentComments = response['comments'] ?? 0;
+        await _client
+            .from('activities')
+            .update({'comments': currentComments + 1})
+            .eq('id', activityId);
+      } catch (_) {}
     } catch (e) {
       print('[ActivityRepo] Error commenting on activity: $e');
       rethrow;

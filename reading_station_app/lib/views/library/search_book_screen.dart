@@ -185,14 +185,14 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
     final state = ref.watch(searchBooksProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF9F7F2),
       appBar: AppBar(
         title: const Text(
           'Tìm kiếm sách',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Color(0xFF385A46), fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Serif'),
         ),
-        backgroundColor: const Color(0xFFF8F9FA),
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: const Color(0xFFF9F7F2),
+        iconTheme: const IconThemeData(color: Color(0xFF4A745B)),
         elevation: 0,
         centerTitle: true,
       ),
@@ -202,15 +202,8 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: const Color(0xFFF4EDE4),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
                 controller: _searchController,
@@ -219,12 +212,12 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
                 },
                 decoration: InputDecoration(
                   hintText: 'Nhập tên sách, tác giả...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF568164)),
+                  hintStyle: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFFBDBDBD)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    icon: const Icon(Icons.clear, color: Color(0xFFBDBDBD)),
                     onPressed: () {
                       _searchController.clear();
                       ref.read(searchBooksProvider.notifier).onChangeQuery('');
@@ -251,11 +244,11 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.menu_book_outlined, size: 60, color: Colors.grey[300]),
+            const Icon(Icons.menu_book_outlined, size: 60, color: Color(0xFFD4DAD0)),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Tìm sách để thêm vào thư viện',
-              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+              style: TextStyle(color: Color(0xFF757575), fontSize: 15),
             ),
           ],
         ),
@@ -326,36 +319,34 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
       borderRadius: BorderRadius.circular(15),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: const Color(0xFFF2EFE9),
+          borderRadius: BorderRadius.circular(20),
         ),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: book.imageUrl.isNotEmpty
-                  ? Image.network(
-                      book.imageUrl,
-                      width: 65,
-                      height: 95,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        print('Error loading image ${book.imageUrl}: $error');
-                        return _defaultCover();
-                      },
-                    )
-                  : _defaultCover(),
+            Container(
+              decoration: const BoxDecoration(
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: book.imageUrl.isNotEmpty
+                    ? Image.network(
+                        book.imageUrl,
+                        width: 65,
+                        height: 95,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading image ${book.imageUrl}: $error');
+                          return _defaultCover();
+                        },
+                      )
+                    : _defaultCover(),
+              ),
             ),
-            const SizedBox(width: 15),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,29 +355,30 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
                     book.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Serif', color: Color(0xFF2C3E35)),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     book.author,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: const TextStyle(color: Color(0xFF757575), fontSize: 13),
                   ),
                   if (book.genre != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1EDE6),
+                        color: const Color(0xFFEBE3D5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        book.genre!,
+                        book.genre!.toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF568164),
+                          color: Color(0xFF5D4037),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
                         ),
                       ),
                     ),
@@ -396,7 +388,7 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
             ),
             const Padding(
               padding: EdgeInsets.only(top: 30.0),
-              child: Icon(Icons.arrow_forward_ios, color: Colors.black26, size: 16),
+              child: Icon(Icons.chevron_right, color: Color(0xFFBDBDBD), size: 20),
             ),
           ],
         ),

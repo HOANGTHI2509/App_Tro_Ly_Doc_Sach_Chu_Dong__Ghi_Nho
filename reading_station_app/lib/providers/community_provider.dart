@@ -42,6 +42,24 @@ final searchUsersProvider = FutureProvider.family<List<Map<String, dynamic>>, St
   return ref.watch(friendshipRepositoryProvider).searchUsers(query);
 });
 
+/// Mảng tạm lưu các ID đã ấn Gửi yêu cầu để đổi hiển thị ngay lập tức
+class LocalSentRequestsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => <String>{};
+
+  void add(String id) {
+    state = <String>{...state, id};
+  }
+
+  void remove(String id) {
+    final newSet = <String>{...state};
+    newSet.remove(id);
+    state = newSet;
+  }
+}
+
+final localSentRequestsProvider = NotifierProvider<LocalSentRequestsNotifier, Set<String>>(LocalSentRequestsNotifier.new);
+
 class CommunityController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
@@ -52,7 +70,26 @@ class CommunityController extends AsyncNotifier<void> {
       await ref.read(friendshipRepositoryProvider).sendFriendRequest(friendId);
       ref.invalidate(friendsProvider);
       ref.invalidate(pendingRequestsProvider);
-      ref.invalidate(suggestedFriendsProvider);
+      // ref.invalidate(suggestedFriendsProvider); // Không invalidate để không làm mất item đang hiển thị
+      
+      // Đánh dấu là đã gửi thành công trong thiết bị
+      ref.read(localSentRequestsProvider.notifier).add(friendId);
+      
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  }
+
+  Future<void> cancelFriendRequestInSuggestion(String friendId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(friendshipRepositoryProvider).cancelRequest(friendId);
+      ref.invalidate(pendingRequestsProvider);
+      
+      // Xóa dấu vết gửi thành công
+      ref.read(localSentRequestsProvider.notifier).remove(friendId);
+      
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -80,13 +117,17 @@ class CommunityController extends AsyncNotifier<void> {
     }
   }
 
-  Future<void> commentOnActivity(String activityId, String content) async {
+  Future<void> commentOnActivity(String activityId, String content, {String? parentId}) async {
     try {
-      await ref.read(activityRepositoryProvider).commentOnActivity(activityId, content);
+      await ref.read(activityRepositoryProvider).commentOnActivity(activityId, content, parentId: parentId);
       ref.invalidate(feedProvider);
     } catch (e) {
       print('Error commenting: $e');
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getComments(String activityId) async {
+    return await ref.read(activityRepositoryProvider).getComments(activityId);
   }
 
   Future<void> removeFriend(String friendshipId) async {

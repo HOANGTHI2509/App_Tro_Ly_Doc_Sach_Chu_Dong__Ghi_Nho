@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/auth_controller.dart';
+import '../../providers/nav_provider.dart';
+import '../../providers/library_provider.dart';
+import '../../providers/note_provider.dart';
+import '../../providers/review_provider.dart';
+import '../../providers/review_settings_provider.dart';
+import '../../providers/community_provider.dart';
 import '../auth/login_screen.dart';
 import 'account_screen.dart';
 import 'notification_settings_screen.dart';
 import 'help_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -126,7 +133,19 @@ class ProfileScreen extends StatelessWidget {
             TextButton(
               onPressed: () async {
                  await AuthController().signOut();
-                 // AuthController stream in main.dart will handle navigation
+                 // Invalidate all global providers to clear cache for the next user
+                 ref.invalidate(navProvider);
+                 ref.invalidate(userBooksProvider);
+                 ref.invalidate(allNotesProvider);
+                 ref.invalidate(dueNotesProvider);
+                 ref.invalidate(totalNotesCountProvider);
+                 ref.invalidate(memorizedNotesCountProvider);
+                 ref.invalidate(streakProvider);
+                 ref.invalidate(weeklyStudyDaysProvider);
+                 ref.invalidate(reviewSettingsProvider);
+                 ref.invalidate(feedProvider);
+                 ref.invalidate(friendsProvider);
+                 ref.invalidate(pendingRequestsProvider);
               },
               child: const Text(
                 'Đăng xuất',

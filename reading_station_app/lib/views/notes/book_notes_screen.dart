@@ -255,14 +255,21 @@ class _NoteCardItemState extends State<_NoteCardItem> {
                   ),
                   const SizedBox(height: 20),
                   MarkdownBody(
-                    data: '“${widget.note.content}”',
+                    data: '“ ${widget.note.content} ”',
                     styleSheet: MarkdownStyleSheet(
                       p: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         height: 1.6,
                         color: Color(0xFF2C3E35),
                         fontFamily: 'Serif',
+                      ),
+                      strong: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                      em: const TextStyle(
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                   ),

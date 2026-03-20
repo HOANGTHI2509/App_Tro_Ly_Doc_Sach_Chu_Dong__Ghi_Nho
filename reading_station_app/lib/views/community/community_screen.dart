@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/community_provider.dart';
 import 'add_friend_screen.dart';
 import 'friends_management_screen.dart';
+import 'pending_requests_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'comments_bottom_sheet.dart';
 
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
@@ -37,37 +39,46 @@ class CommunityScreen extends ConsumerWidget {
             builder: (context, ref, child) {
               final pendingAsync = ref.watch(pendingRequestsProvider);
               final count = pendingAsync.asData?.value.length ?? 0;
+
+              return IconButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PendingRequestsScreen())),
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_outlined, color: Color(0xFF385A46), size: 28),
+                    if (count > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          child: Text(
+                            '$count',
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+          Consumer(
+            builder: (context, ref, child) {
               final user = Supabase.instance.client.auth.currentUser;
               final userName = user?.userMetadata?['name'] ?? 'User';
               final avatarUrl = user?.userMetadata?['avatar_url'];
 
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFFF5B08C),
-                      radius: 18,
-                      backgroundImage: avatarUrl != null 
-                          ? NetworkImage(avatarUrl) 
-                          : NetworkImage('https://ui-avatars.com/api/?name=$userName&background=random'),
-                    ),
-                  ),
-                  if (count > 0)
-                    Positioned(
-                      right: 12,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                ],
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0, left: 8.0),
+                child: CircleAvatar(
+                  backgroundColor: const Color(0xFFF5B08C),
+                  radius: 18,
+                  backgroundImage: avatarUrl != null 
+                      ? NetworkImage(avatarUrl) 
+                      : NetworkImage('https://ui-avatars.com/api/?name=$userName&background=random'),
+                ),
               );
             },
           ),
@@ -139,18 +150,7 @@ class CommunityScreen extends ConsumerWidget {
           decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(24)),
           child: Column(
             children: [
-              Container(
-                width: 180, height: 180,
-                decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [_primaryGreen.withOpacity(0.8), _primaryGreen.withOpacity(0.2)])),
-                child: const Center(
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text('Minimum?', style: TextStyle(color: Color(0xFFFFFFFF), fontStyle: FontStyle.italic, fontSize: 16)),
-                    Text('CONNECTION', style: TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                    Text('Style for life worth', style: TextStyle(color: Color(0xB3FFFFFF), fontSize: 12)),
-                  ]),
-                ),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text('Kết nối cộng đồng\ntin cậy', textAlign: TextAlign.center, style: TextStyle(color: _primaryGreen, fontSize: 24, fontWeight: FontWeight.bold, height: 1.2)),
               const SizedBox(height: 16),
               const Text('Tham gia vào vòng tròn tin cậy để khám phá những cuốn sách bạn bè đang đọc và chia sẻ những cảm nhận chân thực nhất.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF616161), fontSize: 14, height: 1.5)),
@@ -392,15 +392,16 @@ class CommunityScreen extends ConsumerWidget {
           Row(
             children: [
               _buildInteractionButton(
-                icon: Icons.favorite, 
+                icon: (activity['is_liked'] == true) ? Icons.favorite : Icons.favorite_border,
+                iconColor: (activity['is_liked'] == true) ? Colors.red : Colors.grey[600],
                 label: '${activity['likes'] ?? 0}', 
                 onTap: () => ref.read(communityControllerProvider.notifier).likeActivity(activity['id']),
               ),
               const SizedBox(width: 24),
               _buildInteractionButton(
-                icon: Icons.chat_bubble, 
+                icon: Icons.chat_bubble_outline, 
                 label: '${activity['comments'] ?? 0}', 
-                onTap: () => _showCommentDialog(context, ref, activity['id']),
+                onTap: () => _showCommentsSheet(context, activity['id']),
               ),
               const Spacer(),
               Icon(Icons.bookmark_border, color: Colors.grey[500], size: 22),
@@ -413,12 +414,12 @@ class CommunityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInteractionButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildInteractionButton({required IconData icon, Color? iconColor, required String label, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: iconColor ?? Colors.grey[600]),
           const SizedBox(width: 8),
           Text(label, style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.bold)),
         ],
@@ -426,32 +427,17 @@ class CommunityScreen extends ConsumerWidget {
     );
   }
 
-  void _showCommentDialog(BuildContext context, WidgetRef ref, String activityId) {
-    final controller = TextEditingController();
-    showDialog(
+  void _showCommentsSheet(BuildContext context, String activityId) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Bình luận', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Nhập bình luận của bạn...', border: OutlineInputBorder()),
-          maxLines: 2,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          height: MediaQuery.of(ctx).size.height * 0.7,
+          child: CommentsBottomSheet(activityId: activityId),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: Color(0xFF9E9E9E)))),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                ref.read(communityControllerProvider.notifier).commentOnActivity(activityId, text);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã gửi bình luận!')));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4A745B)),
-            child: const Text('Gửi', style: TextStyle(color: Color(0xFFFFFFFF))),
-          ),
-        ],
       ),
     );
   }

@@ -52,12 +52,27 @@ class FriendshipRepository {
     }
   }
 
-  /// Từ chối / Hủy kết bạn
+  /// Từ chối / Hủy kết bạn bằng ID của mối quan hệ
   Future<void> removeFriendship(String friendshipId) async {
     try {
       await _client.from('friendships').delete().eq('id', friendshipId);
     } catch (e) {
       print('Error removing friendship: $e');
+      rethrow;
+    }
+  }
+
+  /// Hủy lời mời kết bạn vừa gửi (bằng ID của người nhận)
+  Future<void> cancelRequest(String friendId) async {
+    try {
+      await _client
+          .from('friendships')
+          .delete()
+          .eq('user_id', _userId)
+          .eq('friend_id', friendId)
+          .eq('status', 'pending');
+    } catch (e) {
+      print('Error canceling friend request: $e');
       rethrow;
     }
   }
@@ -171,14 +186,19 @@ class FriendshipRepository {
         busyIds.add(f['friend_id'] as String);
       }
 
-      // 2. Lấy danh sách users không nằm trong busyIds
-      final data = await _client
-          .from('users')
-          .select()
-          .not('id', 'in', '(${busyIds.join(',')})')
-          .limit(10);
+      // 2. Lấy danh sách users lớn hơn giới hạn một chút và lọc phía client (Dart)
+      // Cách này an toàn nhất để tránh lỗi cú pháp filter của PostgREST
+      final data = await _client.from('users').select().limit(50);
+      final suggestions = <Map<String, dynamic>>[];
+      
+      for (final user in data) {
+        if (!busyIds.contains(user['id'])) {
+          suggestions.add(user);
+          if (suggestions.length >= 10) break;
+        }
+      }
 
-      return List<Map<String, dynamic>>.from(data);
+      return suggestions;
     } catch (e) {
       print('Error getting suggested friends: $e');
       return [];
