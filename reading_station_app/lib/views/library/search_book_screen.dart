@@ -220,7 +220,7 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
                 decoration: InputDecoration(
                   hintText: 'Nhập tên sách, tác giả...',
                   hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFFFF5722)),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF568164)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   suffixIcon: IconButton(
@@ -263,7 +263,7 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
     }
 
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFFF5722)));
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF568164)));
     }
 
     if (state.error != null) {
@@ -307,7 +307,7 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
         if (index == state.books.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: CircularProgressIndicator(color: Color(0xFFFF5722))),
+            child: Center(child: CircularProgressIndicator(color: Color(0xFF568164))),
           );
         }
         return _buildBookItem(state.books[index]);
@@ -378,13 +378,13 @@ class _SearchBookScreenState extends ConsumerState<SearchBookScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBE5),
+                        color: const Color(0xFFF1EDE6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         book.genre!,
                         style: const TextStyle(
-                          color: Color(0xFFFF5722),
+                          color: Color(0xFF568164),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),

@@ -60,8 +60,11 @@ class ActivityRepository {
       for (final row in List<Map<String, dynamic>>.from(received)) {
         ids.add(row['user_id']);
       }
+<<<<<<< HEAD
       // Thêm cả bản thân để xem hoạt động của mình
       ids.add(userId);
+=======
+>>>>>>> feature-library
       
       print('[ActivityRepo] Friend IDs: $ids');
       return ids.toList();
@@ -123,6 +126,7 @@ class ActivityRepository {
     }
   }
 
+<<<<<<< HEAD
   /// FR4.3 - Gợi ý cá nhân hóa: sách mà nhiều bạn bè đã đọc
   Future<List<Map<String, dynamic>>> getFriendRecommendations() async {
     try {
@@ -184,6 +188,46 @@ class ActivityRepository {
       return sorted.take(5).toList(); // Top 5 gợi ý
     } catch (e) {
       print('[ActivityRepo] Error getting recommendations: $e');
+=======
+  Future<List<Map<String, dynamic>>> getFriendRecommendations() async {
+    try {
+      final friendIds = await _getFriendIds();
+      friendIds.remove(_userId); // Chỉ lấy bạn bè thực sự, bỏ bản thân
+      
+      if (friendIds.isEmpty) return [];
+
+      // FR4.3: Lấy trực tiếp danh sách các sách mà bạn bè đang đọc (status = 'Reading')
+      final data = await _client
+          .from('user_books')
+          .select('title, authors, image_url, custom_cover_url, date_added')
+          .inFilter('user_id', friendIds)
+          .eq('status', 'Reading')
+          .order('date_added', ascending: false)
+          .limit(10);
+
+      // Đếm mỗi cuốn sách có bao nhiêu bạn đọc để loại bỏ trùng lặp và nhóm lại
+      final Map<String, Map<String, dynamic>> uniqueBooks = {};
+
+      for (final row in List<Map<String, dynamic>>.from(data)) {
+        final title = row['title'] ?? '';
+        if (title.isEmpty || uniqueBooks.containsKey(title)) continue;
+
+        String author = '';
+        if (row['authors'] != null && (row['authors'] as List).isNotEmpty) {
+           author = row['authors'][0].toString();
+        }
+
+        uniqueBooks[title] = {
+          'book_title': title,
+          'book_author': author,
+          'book_image_url': row['custom_cover_url'] ?? row['image_url'] ?? '',
+        };
+      }
+
+      return uniqueBooks.values.toList();
+    } catch (e) {
+      print('[ActivityRepo] Error getting reading lists: $e');
+>>>>>>> feature-library
       return [];
     }
   }

@@ -10,6 +10,7 @@ class UserBook {
   final DateTime? dateCompleted;
   final int? userRating;
   final int readingProgress; // current page the user is on
+  final String? summary; // User's personal summary of the book
   final String? notes; // For tracking physical location or lending status
   final String? customCoverUrl; // Uploaded by user
 
@@ -21,6 +22,7 @@ class UserBook {
     this.dateCompleted,
     this.userRating,
     this.readingProgress = 0,
+    this.summary,
     this.notes,
     this.customCoverUrl,
   });
@@ -47,6 +49,7 @@ class UserBook {
       'status': status == BookStatus.wishlist ? 'Want to read' : (status == BookStatus.reading ? 'Reading' : 'Completed'),
       'current_page': readingProgress,
       'rating': userRating,
+      'summary': summary,
       'notes': notes,
       'date_completed': dateCompleted?.toIso8601String(),
     };
@@ -77,6 +80,7 @@ class UserBook {
       dateCompleted: data['date_completed'] != null ? DateTime.parse(data['date_completed']) : null,
       userRating: data['rating'],
       readingProgress: data['current_page'] ?? 0,
+      summary: data['summary'],
       notes: data['notes'],
       customCoverUrl: data['custom_cover_url'],
     );
@@ -99,6 +103,7 @@ class UserBook {
       dateCompleted: clearDateCompleted ? null : (dateCompleted ?? this.dateCompleted),
       userRating: userRating ?? this.userRating,
       readingProgress: readingProgress ?? this.readingProgress,
+      summary: summary ?? this.summary,
       notes: notes ?? this.notes,
       customCoverUrl: customCoverUrl ?? this.customCoverUrl,
     );

@@ -117,6 +117,12 @@ class FriendsManagementScreen extends ConsumerWidget {
             ),
 
             const SizedBox(height: 32),
+<<<<<<< HEAD
+=======
+            // Pending Requests Section
+            _buildPendingRequestsSection(context, ref),
+
+>>>>>>> feature-library
             Text(
               'Danh sách bạn bè',
               style: TextStyle(color: _primaryGreen.withOpacity(0.8), fontSize: 18, fontWeight: FontWeight.bold),
@@ -242,6 +248,73 @@ class FriendsManagementScreen extends ConsumerWidget {
     );
   }
 
+<<<<<<< HEAD
+=======
+  Widget _buildPendingRequestsSection(BuildContext context, WidgetRef ref) {
+    final pendingAsync = ref.watch(pendingRequestsProvider);
+
+    return pendingAsync.when(
+      data: (requests) {
+        if (requests.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lời mời kết bạn',
+              style: TextStyle(color: _primaryGreen.withOpacity(0.8), fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            ...requests.map((r) => _buildPendingRequestCard(context, ref, r)),
+            const SizedBox(height: 32),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildPendingRequestCard(BuildContext context, WidgetRef ref, Map<String, dynamic> request) {
+    final sender = request['friend'] ?? {};
+    final name = sender['name'] ?? 'Người dùng';
+    final friendshipId = request['id'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _goldBeige.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+             radius: 25,
+             backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=$name&background=random'),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(communityControllerProvider.notifier).acceptRequest(friendshipId);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã chấp nhận lời mời của $name')));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              minimumSize: const Size(80, 32),
+            ),
+            child: const Text('Chấp nhận', style: TextStyle(color: Colors.white, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+>>>>>>> feature-library
   Widget _buildSuggestionItem(BuildContext context, WidgetRef ref, Map<String, dynamic> user) {
     final name = user['name'] ?? 'Người dùng';
     final userId = user['id'];

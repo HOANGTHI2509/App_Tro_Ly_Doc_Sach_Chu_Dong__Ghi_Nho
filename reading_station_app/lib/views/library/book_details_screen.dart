@@ -49,8 +49,8 @@ class BookDetailsScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFFFFCCBC),
-              child: const Icon(Icons.person, size: 20, color: Color(0xFFFA6400)),
+              backgroundColor: const Color(0xFFF1EDE6),
+              child: const Icon(Icons.person, size: 20, color: Color(0xFF568164)),
             ),
           )
         ],
@@ -83,12 +83,12 @@ class BookDetailsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0), // Nền cam nhạt
+                  color: const Color(0xFFF1EDE6), // Nền kem
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   statusText,
-                  style: const TextStyle(color: Color(0xFFFA6400), fontWeight: FontWeight.bold, fontSize: 12), // Text màu cam đậm
+                  style: const TextStyle(color: Color(0xFF568164), fontWeight: FontWeight.bold, fontSize: 12), // Text xanh
                 ),
               ),
             const SizedBox(height: 12),
@@ -214,7 +214,7 @@ class BookDetailsScreen extends ConsumerWidget {
                   value: progress / 100,
                   strokeWidth: 5,
                   backgroundColor: Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFA6400)), // Màu cam
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF568164)), // Màu xanh
                 ),
                 Center(
                   child: Text(
@@ -260,19 +260,19 @@ class BookDetailsScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF8F5), // Nền màu cam rất nhạt
+          color: const Color(0xFFF1EDE6), // Nền màu kem
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFDE8E1), width: 1.5), // Viền cam nhạt
+          border: Border.all(color: const Color(0xFFE5DFD5), width: 1.5), // Viền nhạt
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: const Color(0xFFD3A38B)), // Màu Icon nâu cam
+            Icon(icon, size: 18, color: const Color(0xFF568164)), // Màu Icon xanh
             const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                color: Color(0xFFD3A38B),
+                color: Color(0xFF568164),
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
               ),
@@ -306,7 +306,7 @@ class BookDetailsScreen extends ConsumerWidget {
     return ElevatedButton(
       onPressed: () => _showAddConfirmationDialog(context, ref),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFFA6400),
+        backgroundColor: const Color(0xFF568164),
         minimumSize: const Size(double.infinity, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
@@ -333,7 +333,7 @@ class BookDetailsScreen extends ConsumerWidget {
                  Navigator.pop(context);
                  _addBookToLibrary(context, ref, book, BookStatus.wishlist);
                },
-               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF568164), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                child: const Text('Muốn đọc', style: TextStyle(color: Colors.white)),
             ),
             ElevatedButton(
@@ -341,7 +341,7 @@ class BookDetailsScreen extends ConsumerWidget {
                  Navigator.pop(context);
                  _addBookToLibrary(context, ref, book, BookStatus.reading);
                },
-               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFA6400), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF568164), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                child: const Text('Đang đọc', style: TextStyle(color: Colors.white)),
             ),
           ],

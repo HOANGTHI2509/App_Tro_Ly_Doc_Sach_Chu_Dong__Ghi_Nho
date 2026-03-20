@@ -36,6 +36,7 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).addBook(userBook);
       ref.invalidate(userBooksProvider);
+<<<<<<< HEAD
       
       // Tạo activity khi thêm sách
       final actType = userBook.status == BookStatus.reading ? 'started_reading' : 'added_book';
@@ -46,6 +47,21 @@ class LibraryController extends AsyncNotifier<void> {
         bookAuthor: userBook.book.author,
       );
       
+=======
+
+      String type = 'added_book';
+      if (userBook.status == BookStatus.reading) type = 'started_reading';
+      if (userBook.status == BookStatus.completed) type = 'finished_book';
+
+      ref.read(communityControllerProvider.notifier).postActivity(
+        type: type,
+        bookTitle: userBook.book.title,
+        bookImageUrl: userBook.book.imageUrl,
+        bookAuthor: userBook.book.authors.isNotEmpty ? userBook.book.authors.first : '',
+        rating: userBook.userRating,
+      );
+
+>>>>>>> feature-library
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -56,14 +72,22 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).updateBook(updatedBook);
       ref.invalidate(userBooksProvider);
+<<<<<<< HEAD
       
       // Tạo activity khi đọc xong sách
+=======
+
+>>>>>>> feature-library
       if (updatedBook.status == BookStatus.completed) {
         ref.read(communityControllerProvider.notifier).postActivity(
           type: 'finished_book',
           bookTitle: updatedBook.book.title,
           bookImageUrl: updatedBook.book.imageUrl,
+<<<<<<< HEAD
           bookAuthor: updatedBook.book.author,
+=======
+          bookAuthor: updatedBook.book.authors.isNotEmpty ? updatedBook.book.authors.first : '',
+>>>>>>> feature-library
           rating: updatedBook.userRating,
         );
       }
@@ -78,7 +102,16 @@ class LibraryController extends AsyncNotifier<void> {
       await ref.read(libraryRepositoryProvider).removeBook(bookId);
       ref.invalidate(userBooksProvider);
     } catch (e) {
-      print('Error removing book: $e');
+       print('Error removing book: $e');
+    }
+  }
+
+  Future<void> updateSummary(String bookId, String summary) async {
+    try {
+      await ref.read(libraryRepositoryProvider).updateSummary(bookId, summary);
+      ref.invalidate(userBooksProvider);
+    } catch (e) {
+      print('Error updating summary in controller: $e');
     }
   }
 }

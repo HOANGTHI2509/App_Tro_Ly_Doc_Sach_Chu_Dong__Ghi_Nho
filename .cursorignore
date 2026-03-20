@@ -1,0 +1,45 @@
+# Flutter/Dart build files and caches
+.dart_tool/
+build/
+.pub-cache/
+.pub/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Mac/Windows/Linux specifics
+.DS_Store
+Thumbs.db
+*.sln
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.part.dart
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Assets and images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Binaries/Compiled files
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Others
+coverage/
+test_coverage/
+

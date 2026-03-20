@@ -164,7 +164,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   const Icon(Icons.menu, color: Color(0xFFFA6400), size: 28),
+                   const Icon(Icons.menu, color: Color(0xFF2C3E35), size: 28),
                    if (_isSearching)
                      Expanded(
                        child: Padding(
@@ -199,14 +199,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                        style: TextStyle(
                          fontSize: 22,
                          fontWeight: FontWeight.bold,
-                         color: Color(0xFFFA6400),
+                         color: Color(0xFF568164),
                          fontFamily: 'Serif', // Dùng serif font
                        ),
                      ),
                    
                    if (!_isSearching)
                      IconButton(
-                       icon: const Icon(Icons.search, color: Color(0xFFFA6400), size: 28),
+                       icon: const Icon(Icons.search, color: Color(0xFF2C3E35), size: 28),
                        onPressed: () {
                          setState(() {
                            _isSearching = true;
@@ -258,18 +258,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           padding: EdgeInsets.only(top: 40),
                           child: Center(child: Text('Chưa có sách nào...', style: TextStyle(color: Colors.grey))),
                       )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: displayedBooks.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: BookItem(userBook: displayedBooks[index], status: _selectedStatus),
-                            );
-                          },
-                        ),
+                      : Column(
+                        children: [
+                          ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: displayedBooks.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 20),
+                                  child: BookItem(userBook: displayedBooks[index], status: _selectedStatus),
+                                );
+                              },
+                            ),
+                          if (_selectedStatus == BookStatus.completed)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              child: _buildAchievementCard(displayedBooks.length),
+                            ),
+                        ],
+                      ),
                     const SizedBox(height: 100), // Không gian cho Add button
                   ],
                 ),
@@ -282,10 +291,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10.0),
         child: FloatingActionButton(
+          heroTag: 'library_fab',
           onPressed: _showAddBookBottomSheet,
-          backgroundColor: const Color(0xFFFA6400),
-          elevation: 4,
-          shape: const CircleBorder(),
+          backgroundColor: const Color(0xFF568164),
+          elevation: 6,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: const Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
@@ -294,6 +304,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildFilterTab(String label, BookStatus status) {
     bool isSelected = _selectedStatus == status;
+    Color activeColor = const Color(0xFF568164); // Xanh mới đồng bộ
+
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _selectedStatus = status),
@@ -301,7 +313,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFFA6400) : const Color(0xFFEFECE5),
+            color: isSelected ? activeColor : const Color(0xFFF1EDE6),
             borderRadius: BorderRadius.circular(25),
           ),
           alignment: Alignment.center,
@@ -314,6 +326,74 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementCard(int bookCount) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFECE5),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Thành tích của bạn',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Serif',
+                    color: Color(0xFF1B263B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text.rich(
+                  TextSpan(
+                    text: 'Bạn đã hoàn thành ',
+                    style: const TextStyle(color: Colors.black54, fontSize: 13),
+                    children: [
+                      TextSpan(
+                        text: '$bookCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF568164)),
+                      ),
+                      const TextSpan(text: ' cuốn sách trong năm nay. Tuyệt vời!'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '$bookCount',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF568164),
+                  ),
+                ),
+                const Text(
+                  'SÁCH ĐÃ ĐỌC',
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
