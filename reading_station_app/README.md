@@ -1,16 +1,10 @@
-# reading_station_app
+# 📚 Trạm Đọc (Reading Station)
 
-A new Flutter project.
+> **Trợ lý Đọc sách Chủ động & Ghi nhớ thông minh.**  
+> Chào mừng đến với mã nguồn chính của ứng dụng Flutter!
 
-## Getting Started
+Vui lòng xem **README** đầy đủ và toàn diện tại thư mục gốc của dự án:
+👉 [**Cấu hình dự án chi tiết tại README.md ở thư mục Root**](../README.md)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Bạn cũng có thể xem kiến trúc kỹ thuật của app tại:
+👉 [**PROJECT_MAP.md**](./PROJECT_MAP.md)
