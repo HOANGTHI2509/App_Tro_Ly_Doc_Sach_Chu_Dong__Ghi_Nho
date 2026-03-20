@@ -16,8 +16,8 @@ void main() async {
   
   // Initialize Supabase correctly for Auth and Database
   await Supabase.initialize(
-    url: 'https://kvechqvsflmmxruikrtt.supabase.co',
-    anonKey: 'sb_publishable_Bn9x0JxeSONUEDX_ItvyJQ__9hwuUMT',
+    url: 'https://qdkjnzevjwibyrfindvb.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFka2puemV2andpYnlyZmluZHZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDA3MDYsImV4cCI6MjA4OTU3NjcwNn0.FUhHCzeB1msfrYx9YhklkplrSAIGMGMCV3hpNIhQU7o',
   );
 
   // Initialize Notification Service

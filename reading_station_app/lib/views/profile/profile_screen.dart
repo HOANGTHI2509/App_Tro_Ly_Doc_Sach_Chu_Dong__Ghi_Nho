@@ -1,192 +1,323 @@
 import 'package:flutter/material.dart';
 import '../../controllers/auth_controller.dart';
-import '../auth/login_screen.dart';
-import 'account_screen.dart';
-import 'notification_settings_screen.dart';
-import 'help_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  // Theme Colors based on screenshot
+  static const Color bgColor = Color(0xFFF9F8F4);
+  static const Color primaryGreen = Color(0xFF5E715B);
+  static const Color softGreen = Color(0xFFE8F5E9);
+  static const Color accentOrange = Color(0xFFFA6400);
+  static const Color textMain = Color(0xFF2C3E35);
+  static const Color textSub = Color(0xFF7A7A7A);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Cá nhân', style: TextStyle(color: Color(0xFFFF5722), fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-            // Settings icon could go here
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // User Info
-            Center(
-              child: Column(
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              // Header Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Stack(
-                     alignment: Alignment.bottomRight,
-                     children: [
-                       const CircleAvatar(
-                         radius: 50,
-                         backgroundImage: NetworkImage('https://i.pravatar.cc/300?u=profile'),
-                       ),
-                       Container(
-                         padding: const EdgeInsets.all(4),
-                         decoration: const BoxDecoration(
-                           color: Color(0xFFFF5722),
-                           shape: BoxShape.circle,
-                         ),
-                         child: const Icon(Icons.star, color: Colors.white, size: 16),
-                       )
-                     ],
-                   ),
-                   const SizedBox(height: 15),
-                   const Text(
-                     'Anh lính cứu hỏa',
-                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                   ),
-                   const SizedBox(height: 5),
-                   Text(
-                     'linhcuuhoa@gmail.com',
-                     style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                   ),
+                  Row(
+                    children: [
+                      const Icon(Icons.menu_book, color: primaryGreen, size: 24),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Cá nhân',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: primaryGreen,
+                          fontFamily: 'Serif',
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                        )
+                      ],
+                    ),
+                    child: const Icon(Icons.person_outline, color: Colors.orangeAccent, size: 24),
+                  ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            // Stats
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem('45', 'Sách', const Color(0xFFFF5722)),
-                _buildStatItem('32', 'Ghi chú', const Color(0xFFFF5722)),
-                _buildStatItem('186', 'Chuỗi ngày', const Color(0xFFFF5722)),
-              ],
-            ),
-            
-            const SizedBox(height: 30),
-            const Divider(),
-            const SizedBox(height: 10),
-
-            // Menu Options
-            _buildMenuItem(
-              context,
-              icon: Icons.person_outline,
-              title: 'Tài khoản',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountScreen()));
-              },
-            ),
-            _buildMenuItem(
-              context,
-              icon: Icons.notifications_none,
-              title: 'Thông báo & Nhắc nhở',
-              onTap: () {
-                 Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()));
-              },
-            ),
-            _buildMenuItem(
-              context,
-              icon: Icons.sync,
-              title: 'Đồng bộ & Thiết bị',
-              onTap: () {},
-              trailing: const Icon(Icons.check_circle, color: Colors.green, size: 20),
-            ),
-            
-            const SizedBox(height: 20),
-            Container(height: 8, color: Colors.grey[100]),
-            const SizedBox(height: 20),
-
-             _buildMenuItem(
-              context,
-              icon: Icons.help_outline,
-              title: 'Trợ giúp & Phản hồi',
-              onTap: () {
-                 Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
-              },
-            ),
-             _buildMenuItem(
-              context,
-              icon: Icons.verified_user_outlined,
-              title: 'Điều khoản & quyền riêng tư',
-              onTap: () {},
-            ),
-
-            const SizedBox(height: 40),
-
-            // Logout
-            TextButton(
-              onPressed: () async {
-                 await AuthController().signOut();
-                 // AuthController stream in main.dart will handle navigation
-              },
-              child: const Text(
-                'Đăng xuất',
-                style: TextStyle(
-                  color: Color(0xFFFF5722),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              // Profile Section
+              Center(
+                child: Column(
+                  children: [
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const CircleAvatar(
+                            radius: 60,
+                            backgroundColor: softGreen,
+                            backgroundImage: NetworkImage('https://img.freepik.com/free-vector/hand-drawn-flat-design-stack-books-illustration_23-2149341898.jpg'), // Using available asset pattern
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: primaryGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      'Minh Tú',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: textMain,
+                        fontFamily: 'Serif',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Hành trình vạn dặm bắt đầu từ những trang sách đầu tiên. 🌿',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: textSub, fontSize: 13, height: 1.5),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 20),
 
-          ],
+              const SizedBox(height: 30),
+
+              // Small Stats Grid
+              Row(
+                children: [
+                   Expanded(
+                    child: _buildStatCard('32', 'Sách đã đọc', Icons.library_books_outlined),
+                  ),
+                  const SizedBox(width: 15),
+                   Expanded(
+                    child: _buildStatCard('156', 'Ghi chú', Icons.description_outlined),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              // Streak Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6EFE4),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.bolt, color: primaryGreen, size: 30),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '12 ngày',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: primaryGreen,
+                      ),
+                    ),
+                    const Text(
+                      'Chuỗi ngày',
+                      style: TextStyle(color: textSub, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Achievement Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Thành tích',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textMain),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text('Xem tất cả', style: TextStyle(color: textSub, fontSize: 12)),
+                        Icon(Icons.chevron_right, size: 16, color: textSub),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildAchievementBadge('Mọt sách', const Color(0xFFFDEBB7), Icons.menu_book),
+                    _buildAchievementBadge('Người ghi chép', const Color(0xFFC0E8C4), Icons.edit_note),
+                    _buildAchievementBadge('Kiên trì', const Color(0xFFEAEAEA), Icons.calendar_today),
+                    _buildAchievementBadge('Thành tựu i', const Color(0xFFF5F5F5), Icons.lock_outline, isLocked: true),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Menu List
+              _buildMenuSection([
+                _buildMenuTile(Icons.notifications_outlined, 'Thông báo ôn tập', () {}),
+                _buildMenuTile(Icons.sync, 'Đồng bộ dữ liệu', () {}),
+                _buildMenuTile(Icons.settings_outlined, 'Cài đặt', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SettingsScreen()),
+                  );
+                }),
+                _buildMenuTile(Icons.help_outline, 'Trung tâm trợ giúp', () {}),
+                _buildMenuTile(Icons.logout, 'Đăng xuất', () async {
+                  await AuthController().signOut();
+                }, isLogout: true),
+              ]),
+
+              const SizedBox(height: 30),
+              const Center(
+                child: Text(
+                  'Trạm Đọc — Phiên bản 2.4.0',
+                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String value, String label, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: primaryGreen, size: 24),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textMain),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(color: textSub, fontSize: 11, fontWeight: FontWeight.w500),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, VoidCallback? onTap, Widget? trailing}) {
+  Widget _buildAchievementBadge(String label, Color color, IconData icon, {bool isLocked = false}) {
+     return Padding(
+       padding: const EdgeInsets.only(right: 15),
+       child: Column(
+         children: [
+           Container(
+             width: 70,
+             height: 70,
+             decoration: BoxDecoration(
+               color: color,
+               shape: BoxShape.circle,
+               border: isLocked ? Border.all(color: Colors.grey[300]!, width: 1, style: BorderStyle.solid) : null,
+             ),
+             child: Icon(icon, color: isLocked ? Colors.grey : textMain, size: 30),
+           ),
+           const SizedBox(height: 8),
+           Text(
+             label,
+             style: TextStyle(
+               color: isLocked ? Colors.grey : textMain,
+               fontSize: 11,
+               fontWeight: FontWeight.w500,
+             ),
+           ),
+         ],
+       ),
+     );
+  }
+
+  Widget _buildMenuSection(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildMenuTile(IconData icon, String title, VoidCallback onTap, {bool isLogout = false}) {
     return ListTile(
+      onTap: onTap,
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: Colors.black87, size: 22),
+        child: Icon(icon, color: isLogout ? Colors.redAccent : primaryGreen, size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: isLogout ? Colors.redAccent : textMain,
+        ),
       ),
-      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      trailing: isLogout ? null : const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
+
