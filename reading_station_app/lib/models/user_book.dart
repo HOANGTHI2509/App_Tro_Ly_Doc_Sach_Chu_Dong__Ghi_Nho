@@ -92,6 +92,7 @@ class UserBook {
     bool clearDateCompleted = false,
     int? userRating,
     int? readingProgress,
+    String? summary,
     String? notes,
     String? customCoverUrl,
   }) {

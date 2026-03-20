@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/community_provider.dart';
 import 'add_friend_screen.dart';
 import 'friends_management_screen.dart';
-<<<<<<< HEAD
-=======
-import 'package:supabase_flutter/supabase_flutter.dart';
->>>>>>> feature-library
 
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
@@ -31,7 +27,6 @@ class CommunityScreen extends ConsumerWidget {
           ),
         ),
         title: const Text(
-<<<<<<< HEAD
           'Trạm Đọc',
           style: TextStyle(color: Color(0xFF4A745B), fontWeight: FontWeight.bold, fontSize: 20),
         ),
@@ -40,50 +35,6 @@ class CommunityScreen extends ConsumerWidget {
           IconButton(
             icon: Icon(Icons.notifications_none, color: _primaryGreen),
             onPressed: () {},
-=======
-          'Vòng tròn Tin cậy',
-          style: TextStyle(color: Color(0xFF385A46), fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Serif'),
-        ),
-        centerTitle: true,
-        actions: [
-          Consumer(
-            builder: (context, ref, child) {
-              final pendingAsync = ref.watch(pendingRequestsProvider);
-              final count = pendingAsync.asData?.value.length ?? 0;
-              final user = Supabase.instance.client.auth.currentUser;
-              final userName = user?.userMetadata?['name'] ?? 'User';
-              final avatarUrl = user?.userMetadata?['avatar_url'];
-
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFFF5B08C),
-                      radius: 18,
-                      backgroundImage: avatarUrl != null 
-                          ? NetworkImage(avatarUrl) 
-                          : NetworkImage('https://ui-avatars.com/api/?name=$userName&background=random'),
-                    ),
-                  ),
-                  if (count > 0)
-                    Positioned(
-                      right: 12,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
->>>>>>> feature-library
           ),
         ],
       ),
@@ -127,16 +78,11 @@ class CommunityScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-<<<<<<< HEAD
           color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(color: const Color(0x0D000000), blurRadius: 10, offset: const Offset(0, 4)),
           ],
-=======
-          color: const Color(0xFFF4EDE4),
-          borderRadius: BorderRadius.circular(30),
->>>>>>> feature-library
         ),
         child: Row(
           children: [
@@ -206,28 +152,16 @@ class CommunityScreen extends ConsumerWidget {
           children: [
             const Row(
               children: [
-<<<<<<< HEAD
                 Icon(Icons.people_alt_outlined, color: Color(0xFF4A745B)),
                 SizedBox(width: 8),
                 Text('Danh sách bạn bè', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-=======
-                Icon(Icons.people, color: Color(0xFF385A46), size: 22),
-                SizedBox(width: 8),
-                Text('Danh sách bạn bè', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF385A46), fontFamily: 'Serif')),
->>>>>>> feature-library
               ],
             ),
             TextButton.icon(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsManagementScreen())),
-<<<<<<< HEAD
               icon: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF9E9E9E)),
               label: const Text('Quản lý', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
               style: TextButton.styleFrom(backgroundColor: const Color(0xFFEFEBE7), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-=======
-              icon: const Icon(Icons.settings_outlined, size: 16, color: Color(0xFF5D4037)),
-              label: const Text('Quản lý', style: TextStyle(color: Color(0xFF5D4037), fontSize: 13, fontWeight: FontWeight.bold)),
-              style: TextButton.styleFrom(backgroundColor: const Color(0xFFEBE3D5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
->>>>>>> feature-library
             ),
           ],
         ),
@@ -294,15 +228,9 @@ class CommunityScreen extends ConsumerWidget {
         const SizedBox(height: 32),
         const Row(
           children: [
-<<<<<<< HEAD
             Icon(Icons.auto_awesome, color: Color(0xFF4A745B), size: 20),
             SizedBox(width: 8),
             Text('Hoạt động mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-=======
-            Icon(Icons.auto_awesome, color: Color(0xFF385A46), size: 22),
-            SizedBox(width: 8),
-            Text('Hoạt động mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF385A46), fontFamily: 'Serif')),
->>>>>>> feature-library
           ],
         ),
         const SizedBox(height: 16),
@@ -338,7 +266,6 @@ class CommunityScreen extends ConsumerWidget {
     if (type == 'created_note') {
       actionText = 'vừa ghi chú';
       contentWidget = Container(
-<<<<<<< HEAD
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
         child: Column(
@@ -347,41 +274,22 @@ class CommunityScreen extends ConsumerWidget {
             const Icon(Icons.format_quote, color: Color(0xFF9E9E9E), size: 24),
             Text('"$noteContent"', style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Color(0xFF2D3142))),
             if (bookTitle.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: Text('— TỪ $bookTitle', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4A745B)))),
-=======
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: const Color(0xFFF7F8F6), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey[200]!)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.format_quote, color: const Color(0xFFD4DAD0), size: 30),
-            Text('"$noteContent"', style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: Color(0xFF2C3E35), height: 1.5, fontFamily: 'Serif')),
-            if (bookTitle.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 16), child: Text('— TỪ ${bookTitle.toUpperCase()}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF4A745B), letterSpacing: 1.0))),
->>>>>>> feature-library
           ],
         ),
       );
     } else if (type == 'finished_book') {
       actionText = 'vừa đọc xong';
       contentWidget = Container(
-<<<<<<< HEAD
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: const Color(0xFFFDF7F2), borderRadius: BorderRadius.circular(16)),
         child: Row(
           children: [
             ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(bookImage, width: 60, height: 90, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.book, size: 40))),
-=======
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: const Color(0xFFFCF9F2), borderRadius: BorderRadius.circular(20)),
-        child: Row(
-          children: [
-            Container(decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]), child: ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.network(bookImage, width: 60, height: 90, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.book, size: 40)))),
->>>>>>> feature-library
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-<<<<<<< HEAD
                   Text(bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   Text(bookAuthor, style: const TextStyle(color: Color(0xFF757575), fontSize: 13)),
                   const SizedBox(height: 8),
@@ -389,15 +297,6 @@ class CommunityScreen extends ConsumerWidget {
                     ...List.generate(5, (i) => Icon(i < (rating ?? 0) ? Icons.star : Icons.star_border, color: const Color(0xFFFFC107), size: 16)),
                     const SizedBox(width: 8),
                     Text('${(rating ?? 0).toDouble()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-=======
-                  Text(bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2C3E35), fontFamily: 'Serif')),
-                  Text(bookAuthor.isNotEmpty ? bookAuthor : 'Không rõ', style: const TextStyle(color: Color(0xFF757575), fontSize: 13)),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    ...List.generate(5, (i) => Icon(Icons.star, color: const Color(0xFF795548), size: 14)),
-                    const SizedBox(width: 8),
-                    Text('${(rating ?? 5).toDouble()}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
->>>>>>> feature-library
                   ]),
                 ],
               ),
@@ -409,28 +308,16 @@ class CommunityScreen extends ConsumerWidget {
       actionText = 'vừa thêm vào kệ';
       contentWidget = Row(
         children: [
-<<<<<<< HEAD
           ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(bookImage, width: 50, height: 75, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.book))),
           const SizedBox(width: 12),
-=======
-          Container(decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]), child: ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.network(bookImage, width: 60, height: 90, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.book, size: 40)))),
-          const SizedBox(width: 16),
->>>>>>> feature-library
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-<<<<<<< HEAD
                 Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: const Color(0xFFF3EFE9), borderRadius: BorderRadius.circular(4)), child: const Text('MUỐN ĐỌC', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF8B7355)))),
                 const SizedBox(height: 4),
                 Text(bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 Text(bookAuthor, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
-=======
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFEBE3D5), borderRadius: BorderRadius.circular(8)), child: const Text('MUỐN ĐỌC', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF5D4037), letterSpacing: 1.0))),
-                const SizedBox(height: 8),
-                Text(bookTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2C3E35), fontFamily: 'Serif')),
-                Text(bookAuthor, style: const TextStyle(color: Color(0xFF757575), fontSize: 13)),
->>>>>>> feature-library
               ],
             ),
           ),
@@ -440,18 +327,13 @@ class CommunityScreen extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-<<<<<<< HEAD
       padding: const EdgeInsets.all(16),
-=======
-      padding: const EdgeInsets.all(24),
->>>>>>> feature-library
       decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(24)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-<<<<<<< HEAD
               CircleAvatar(backgroundColor: _primaryGreen.withOpacity(0.1), backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=${userName}&background=random')),
               const SizedBox(width: 12),
               Expanded(
@@ -466,37 +348,11 @@ class CommunityScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           contentWidget,
           const SizedBox(height: 16),
-=======
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(radius: 20, backgroundColor: _primaryGreen.withOpacity(0.1), backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=${userName}&background=random')),
-                  Container(
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.check_circle, color: Color(0xFF4A745B), size: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text.rich(TextSpan(text: userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2C3E35)), children: [TextSpan(text: ' $actionText', style: const TextStyle(fontWeight: FontWeight.normal, color: Color(0xFF757575)))])),
-                  Text(_getRelativeTime(createdAt).toUpperCase(), style: const TextStyle(fontSize: 10, color: Color(0xFF9E9E9E), letterSpacing: 1.0, fontWeight: FontWeight.bold)),
-                ]),
-              ),
-              const Icon(Icons.more_horiz, color: Color(0xFFBDBDBD)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          contentWidget,
-          const SizedBox(height: 20),
->>>>>>> feature-library
           Row(
             children: [
               _buildInteractionButton(
                 icon: Icons.favorite, 
                 label: '${activity['likes'] ?? 0}', 
-<<<<<<< HEAD
                 color: const Color(0xFFFF5252), // Đỏ rực rỡ
                 onTap: () => ref.read(communityControllerProvider.notifier).likeActivity(activity['id']),
               ),
@@ -508,20 +364,6 @@ class CommunityScreen extends ConsumerWidget {
                 onTap: () => _showCommentDialog(context, ref, activity['id']),
               ),
               const Spacer(),
-=======
-                onTap: () => ref.read(communityControllerProvider.notifier).likeActivity(activity['id']),
-              ),
-              const SizedBox(width: 24),
-              _buildInteractionButton(
-                icon: Icons.chat_bubble, 
-                label: '${activity['comments'] ?? 0}', 
-                onTap: () => _showCommentDialog(context, ref, activity['id']),
-              ),
-              const Spacer(),
-              Icon(Icons.bookmark_border, color: Colors.grey[500], size: 22),
-              const SizedBox(width: 16),
-              Icon(Icons.share, color: Colors.grey[500], size: 20),
->>>>>>> feature-library
             ],
           ),
         ],
@@ -529,7 +371,6 @@ class CommunityScreen extends ConsumerWidget {
     );
   }
 
-<<<<<<< HEAD
   Widget _buildInteractionButton({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
@@ -547,17 +388,6 @@ class CommunityScreen extends ConsumerWidget {
             Text(label, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold)),
           ],
         ),
-=======
-  Widget _buildInteractionButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.bold)),
-        ],
->>>>>>> feature-library
       ),
     );
   }

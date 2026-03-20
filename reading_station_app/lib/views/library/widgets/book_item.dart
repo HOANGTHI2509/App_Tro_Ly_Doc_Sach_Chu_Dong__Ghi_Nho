@@ -403,9 +403,10 @@ class BookItem extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await ref.read(libraryControllerProvider.notifier).updateSummary(
-                userBook.id, 
-                summaryController.text.trim()
+              await ref.read(libraryControllerProvider.notifier).updateBook(
+                userBook.copyWith(
+                  summary: summaryController.text.trim().isEmpty ? null : summaryController.text.trim()
+                )
               );
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(

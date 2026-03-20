@@ -2,13 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/note.dart';
 import '../repositories/note_repository.dart';
-import 'review_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'community_provider.dart';
-<<<<<<< HEAD
-=======
-import 'library_provider.dart';
->>>>>>> feature-library
 
 // Provider for the repository
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
@@ -32,7 +27,7 @@ class NoteController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<void> addNote(String userBookId, String content, {String? question, int? pageNumber, String? imageUrl, bool? isKeyTakeaway, List<String>? tags}) async {
+  Future<void> addNote(String userBookId, String content, {int? pageNumber, String? imageUrl, bool? isKeyTakeaway, String? question, List<String>? tags}) async {
     state = const AsyncLoading();
     try {
       final repository = ref.read(noteRepositoryProvider);
@@ -44,8 +39,8 @@ class NoteController extends AsyncNotifier<void> {
         pageNumber: pageNumber,
         imageUrl: imageUrl,
         isKeyTakeaway: isKeyTakeaway,
-        createdAt: DateTime.now(),
         tags: tags,
+        createdAt: DateTime.now(),
       );
       
       await repository.addNote(newNote);
@@ -54,7 +49,6 @@ class NoteController extends AsyncNotifier<void> {
       ref.invalidate(allNotesProvider);
       ref.invalidate(bookNotesProvider(userBookId));
       
-<<<<<<< HEAD
       // Tạo activity khi ghi chú
       ref.read(communityControllerProvider.notifier).postActivity(
         type: 'created_note',
@@ -62,30 +56,18 @@ class NoteController extends AsyncNotifier<void> {
         notePage: pageNumber,
       );
       
-=======
-      // Attempt to get book info for the activity feed
-      final books = ref.read(userBooksProvider).asData?.value ?? [];
-      final book = books.where((b) => b.id == userBookId).firstOrNull;
-
-      ref.read(communityControllerProvider.notifier).postActivity(
-        type: 'created_note',
-        noteContent: content,
-        notePage: pageNumber,
-        bookTitle: book?.book.title,
-      );
-
->>>>>>> feature-library
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
     }
   }
 
-  Future<void> updateNote(String noteId, String content, {List<String>? tags}) async {
+  Future<void> updateNote(String noteId, String content, {String? question, List<String>? tags}) async {
     state = const AsyncLoading();
     try {
-      await ref.read(noteRepositoryProvider).updateNote(noteId, content, tags: tags);
+      await ref.read(noteRepositoryProvider).updateNote(noteId, content, question: question, tags: tags);
       ref.invalidate(allNotesProvider);
+      // Nếu muốn chính xác cần userBookId, nhưng invalidate allNotes là đủ để UI update
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -93,15 +75,13 @@ class NoteController extends AsyncNotifier<void> {
   }
 
   Future<void> toggleFlashcardStatus(String noteId, bool isFlashcard, {String? question, String? answer}) async {
+    state = const AsyncLoading();
     try {
       await ref.read(noteRepositoryProvider).toggleFlashcardStatus(noteId, isFlashcard, question: question, answer: answer);
       ref.invalidate(allNotesProvider);
-      
-      // Quan trọng: Invalidate các provider bên phía Ôn tập
-      ref.invalidate(dueNotesProvider);
-      ref.invalidate(totalNotesCountProvider);
-    } catch (e) {
-      print('Error toggling flashcard status: $e');
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
     }
   }
 

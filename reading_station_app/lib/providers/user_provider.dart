@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../controllers/auth_controller.dart';
@@ -27,7 +29,7 @@ final currentUserProvider = FutureProvider<UserModel?>((ref) async {
         
     return UserModel.fromJson(response);
   } catch (e) {
-    print('Error fetching user data: \$e');
+    debugPrint('Error fetching user data: $e');
     return null;
   }
 });

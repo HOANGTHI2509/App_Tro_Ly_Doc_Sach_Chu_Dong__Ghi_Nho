@@ -60,11 +60,8 @@ class ActivityRepository {
       for (final row in List<Map<String, dynamic>>.from(received)) {
         ids.add(row['user_id']);
       }
-<<<<<<< HEAD
       // Thêm cả bản thân để xem hoạt động của mình
       ids.add(userId);
-=======
->>>>>>> feature-library
       
       print('[ActivityRepo] Friend IDs: $ids');
       return ids.toList();
@@ -126,69 +123,6 @@ class ActivityRepository {
     }
   }
 
-<<<<<<< HEAD
-  /// FR4.3 - Gợi ý cá nhân hóa: sách mà nhiều bạn bè đã đọc
-  Future<List<Map<String, dynamic>>> getFriendRecommendations() async {
-    try {
-      final friendIds = await _getFriendIds();
-      friendIds.remove(_userId); // Chỉ lấy bạn bè, bỏ bản thân
-      
-      if (friendIds.isEmpty) return [];
-
-      // Lấy activities thêm sách / đọc xong từ bạn bè
-      final data = await _client
-          .from('activities')
-          .select()
-          .inFilter('user_id', friendIds)
-          .inFilter('type', ['added_book', 'finished_book', 'started_reading'])
-          .order('created_at', ascending: false);
-
-      // Đếm mỗi cuốn sách có bao nhiêu bạn đọc
-      final Map<String, Map<String, dynamic>> bookCounts = {};
-      final Map<String, Set<String>> bookReaders = {};
-
-      for (final row in List<Map<String, dynamic>>.from(data)) {
-        final title = row['book_title'] ?? '';
-        if (title.isEmpty) continue;
-
-        if (!bookCounts.containsKey(title)) {
-          bookCounts[title] = {
-            'book_title': title,
-            'book_author': row['book_author'] ?? '',
-            'book_image_url': row['book_image_url'] ?? '',
-            'count': 0,
-            'reader_names': <String>[],
-          };
-          bookReaders[title] = {};
-        }
-
-        final userId = row['user_id'];
-        if (!bookReaders[title]!.contains(userId)) {
-          bookReaders[title]!.add(userId);
-          bookCounts[title]!['count'] = bookReaders[title]!.length;
-        }
-      }
-
-      // Lấy tên người đọc
-      for (final title in bookCounts.keys) {
-        final names = <String>[];
-        for (final uid in bookReaders[title]!) {
-          final userInfo = await _getUserById(uid);
-          if (userInfo != null) {
-            names.add(userInfo['name'] ?? 'Ai đó');
-          }
-        }
-        bookCounts[title]!['reader_names'] = names;
-      }
-
-      // Sắp xếp theo số người đọc giảm dần
-      final sorted = bookCounts.values.toList()
-        ..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
-
-      return sorted.take(5).toList(); // Top 5 gợi ý
-    } catch (e) {
-      print('[ActivityRepo] Error getting recommendations: $e');
-=======
   Future<List<Map<String, dynamic>>> getFriendRecommendations() async {
     try {
       final friendIds = await _getFriendIds();
@@ -227,7 +161,6 @@ class ActivityRepository {
       return uniqueBooks.values.toList();
     } catch (e) {
       print('[ActivityRepo] Error getting reading lists: $e');
->>>>>>> feature-library
       return [];
     }
   }

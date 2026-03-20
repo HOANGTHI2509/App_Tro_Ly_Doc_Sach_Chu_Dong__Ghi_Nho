@@ -117,12 +117,8 @@ class FriendsManagementScreen extends ConsumerWidget {
             ),
 
             const SizedBox(height: 32),
-<<<<<<< HEAD
-=======
             // Pending Requests Section
             _buildPendingRequestsSection(context, ref),
-
->>>>>>> feature-library
             Text(
               'Danh sách bạn bè',
               style: TextStyle(color: _primaryGreen.withOpacity(0.8), fontSize: 18, fontWeight: FontWeight.bold),
@@ -248,8 +244,6 @@ class FriendsManagementScreen extends ConsumerWidget {
     );
   }
 
-<<<<<<< HEAD
-=======
   Widget _buildPendingRequestsSection(BuildContext context, WidgetRef ref) {
     final pendingAsync = ref.watch(pendingRequestsProvider);
 
@@ -313,8 +307,6 @@ class FriendsManagementScreen extends ConsumerWidget {
       ),
     );
   }
-
->>>>>>> feature-library
   Widget _buildSuggestionItem(BuildContext context, WidgetRef ref, Map<String, dynamic> user) {
     final name = user['name'] ?? 'Người dùng';
     final userId = user['id'];

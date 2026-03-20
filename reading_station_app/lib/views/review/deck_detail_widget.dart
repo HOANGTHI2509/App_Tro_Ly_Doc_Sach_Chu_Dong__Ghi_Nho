@@ -166,13 +166,8 @@ class _DeckDetailWidgetState extends State<DeckDetailWidget> {
                             onPressed: () {
                               if (needReview > 0) {
                                 Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => FlashcardReviewScreen(
-                                    notes: widget.notes.where((n) {
-                                      if (n.nextReview == null) return true;
-                                      return n.nextReview!.isBefore(DateTime.now());
-                                    }).toList()
-                                  )
-                                ));
+                                  builder: (context) => const FlashcardReviewScreen()
+                              ));
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Không có thẻ nào cần ôn!')),

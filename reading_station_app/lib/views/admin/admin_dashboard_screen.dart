@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'admin_books_screen.dart';
 import 'admin_reports_screen.dart';
+import 'admin_support_screen.dart';
 import 'admin_users_screen.dart';
+import 'widgets/admin_avatar.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -11,250 +12,452 @@ class AdminDashboardScreen extends StatefulWidget {
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> with SingleTickerProviderStateMixin {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _supabase = Supabase.instance.client;
   bool _isLoading = true;
-  Map<String, dynamic>? _metrics;
-  String? _errorMsg;
-
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
+  int _totalUsers = 0;
+  int _pendingReports = 0;
+  List<Map<String, dynamic>> _recentActivities = [];
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _fetchMetrics();
-    _animController.forward();
+    _fetchAllData();
   }
 
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
+  Future<void> _fetchAllData() async {
+    setState(() => _isLoading = true);
+    await Future.wait([
+      _fetchMetrics(),
+      _fetchRecentActivities(),
+    ]);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _fetchMetrics() async {
     try {
-      final response = await _supabase.from('system_metrics').select().single();
-      if (mounted) {
-        setState(() {
-          _metrics = response;
-          _isLoading = false;
-        });
-      }
+      // Lấy tổng số người dùng
+      final usersResponse = await _supabase.from('users').select('id');
+      _totalUsers = (usersResponse as List).length;
+
+      // Lấy số báo cáo chờ xử lý
+      final reportsResponse = await _supabase
+          .from('reports')
+          .select('id')
+          .eq('status', 'pending');
+      _pendingReports = (reportsResponse as List).length;
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMsg = 'Lỗi tải dữ liệu: $e';
-          _isLoading = false;
+      debugPrint('[AdminDashboard] Error fetching metrics: $e');
+    }
+  }
+
+  Future<void> _fetchRecentActivities() async {
+    try {
+      // Lấy báo cáo gần đây (chưa xử lý trước)
+      final reports = await _supabase
+          .from('reports')
+          .select('id, type, content, status, created_at, reporter_id')
+          .order('created_at', ascending: false)
+          .limit(5);
+
+      final List<Map<String, dynamic>> activities = [];
+
+      for (final report in List<Map<String, dynamic>>.from(reports)) {
+        final type = report['type'] ?? 'report';
+        final status = report['status'] ?? 'pending';
+        final content = report['content'] ?? '';
+        final createdAt = DateTime.tryParse(report['created_at'] ?? '') ?? DateTime.now();
+        final timeAgo = _getTimeAgo(createdAt);
+
+        IconData icon;
+        Color iconColor;
+        Color bgColor;
+        String title;
+        String btnLabel;
+        bool btnSolid;
+
+        if (status == 'pending') {
+          if (type == 'content_violation' || type == 'spam') {
+            icon = Icons.warning_rounded;
+            iconColor = const Color(0xFFEF4444);
+            bgColor = const Color(0xFFFEF2F2);
+            title = 'Cảnh báo nội dung';
+            btnLabel = 'Xử lý';
+            btnSolid = false;
+          } else if (type == 'feedback' || type == 'support') {
+            icon = Icons.chat_bubble_rounded;
+            iconColor = const Color(0xFF0C4A6E);
+            bgColor = const Color(0xFFD0E3F0);
+            title = 'Phản hồi mới';
+            btnLabel = 'Xem';
+            btnSolid = false;
+          } else {
+            icon = Icons.verified_user_rounded;
+            iconColor = const Color(0xFF78350F);
+            bgColor = const Color(0xFFFDE6CD);
+            title = 'Yêu cầu xác minh';
+            btnLabel = 'Duyệt';
+            btnSolid = true;
+          }
+        } else {
+          icon = Icons.check_circle_rounded;
+          iconColor = const Color(0xFF10B981);
+          bgColor = const Color(0xFFD1FAE5);
+          title = 'Đã xử lý';
+          btnLabel = 'Xem';
+          btnSolid = false;
+        }
+
+        activities.add({
+          'id': report['id'],
+          'icon': icon,
+          'iconColor': iconColor,
+          'bgColor': bgColor,
+          'title': title,
+          'subtitle': content.length > 40 ? '${content.substring(0, 40)}...' : content,
+          'time': timeAgo,
+          'btnLabel': btnLabel,
+          'btnColor': status == 'pending' ? iconColor : const Color(0xFF0C4A6E),
+          'btnSolid': btnSolid,
+          'status': status,
+          'type': type,
+          'rawData': report,
         });
       }
+
+      _recentActivities = activities;
+    } catch (e) {
+      debugPrint('[AdminDashboard] Error fetching activities: $e');
+      _recentActivities = [];
     }
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+    if (diff.inMinutes < 1) return 'Vừa xong';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}p trước';
+    if (diff.inHours < 24) return '${diff.inHours}h trước';
+    if (diff.inDays < 7) return '${diff.inDays} ngày trước';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+  }
+
+  void _navigateToReports() {
+    // Tìm AdminMainScreen cha và chuyển tab sang Reports
+    final scaffold = context.findAncestorStateOfType<ScaffoldState>();
+    // Hoặc đẩy trang mới
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const AdminReportsScreen()),
+    );
+  }
+
+  void _navigateToSupport() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const AdminSupportScreen()),
+    );
+  }
+
+  void _navigateToUsers() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const AdminUsersScreen()),
+    );
+  }
+
+  void _showActivityDetail(Map<String, dynamic> activity) {
+    final rawData = activity['rawData'] as Map<String, dynamic>;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: activity['bgColor'] as Color,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(activity['icon'] as IconData, color: activity['iconColor'] as Color, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(activity['title'] as String, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0C4A6E))),
+                        const SizedBox(height: 4),
+                        Text(activity['time'] as String, style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Trạng thái
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: rawData['status'] == 'pending' ? const Color(0xFFFEF3C7) : const Color(0xFFD1FAE5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  rawData['status'] == 'pending' ? '⏳ Đang chờ xử lý' : '✅ Đã xử lý',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: rawData['status'] == 'pending' ? const Color(0xFF92400E) : const Color(0xFF065F46),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Nội dung
+              const Text('NỘI DUNG', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 1)),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  rawData['content'] ?? 'Không có nội dung',
+                  style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF334155)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Loại & ID
+              Row(
+                children: [
+                  _buildDetailChip('Loại', rawData['type'] ?? 'N/A'),
+                  const SizedBox(width: 12),
+                  _buildDetailChip('ID', (rawData['id'] ?? '').toString().substring(0, 8)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Action Buttons
+              if (rawData['status'] == 'pending')
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          await _supabase.from('reports').update({'status': 'dismissed'}).eq('id', rawData['id']);
+                          Navigator.pop(context);
+                          _fetchAllData();
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã bỏ qua báo cáo')));
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF64748B),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Bỏ qua', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _supabase.from('reports').update({'status': 'resolved'}).eq('id', rawData['id']);
+                          Navigator.pop(context);
+                          _fetchAllData();
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xử lý báo cáo thành công!')));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0C4A6E),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Xử lý xong', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0C4A6E),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Đóng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailChip(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$label: ', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0C4A6E))),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC), // Màu nền sáng, tinh tế
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFA6400)))
-          : _errorMsg != null
-              ? _buildErrorState()
-              : _buildDashboardContent(),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 64),
-          const SizedBox(height: 16),
+      backgroundColor: const Color(0xFFF9FAFC),
+      appBar: AppBar(
+        flexibleSpace: Container(color: const Color(0xFFF9FAFC)),
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        actions: [
           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 32),
-             child: Text(_errorMsg!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent, fontSize: 16)),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.refresh),
-            label: const Text('Thử Lại'),
-            onPressed: () {
-              setState(() {
-                _isLoading = true;
-                _errorMsg = null;
-              });
-              _fetchMetrics();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFA6400),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDashboardContent() {
-    final pendingReports = _metrics?["pending_reports"] ?? 0;
-    final totalUsers = _metrics?["total_users"] ?? 0;
-    final totalBooks = _metrics?["total_master_books"] ?? 0;
-    final totalFlashcards = _metrics?["total_flashcards"] ?? 0;
-    final totalActivities = _metrics?["total_activities"] ?? 0;
-
-    return RefreshIndicator(
-      onRefresh: _fetchMetrics,
-      color: const Color(0xFFFA6400),
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildOverviewCards(totalUsers, totalBooks, totalFlashcards, totalActivities),
-                    const SizedBox(height: 32),
-                    _buildChartSection(totalActivities, totalFlashcards, totalUsers),
-                    const SizedBox(height: 80), // Padding cho bottom nav bar
-                  ],
-                ),
-              ),
-            ),
+            padding: const EdgeInsets.only(right: 16),
+            child: const AdminAvatar(),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSliverAppBar() {
-    return SliverAppBar(
-      expandedHeight: 180.0,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFFF7F9FC),
-      elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFA6400), Color(0xFFFF8A00)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(36), bottomRight: Radius.circular(36)),
-              ),
-            ),
-            // Decorative shapes
-            Positioned(top: -40, right: -40, child: Container(width: 150, height: 150, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)))),
-            Positioned(bottom: 20, left: -20, child: Container(width: 100, height: 100, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)))),
-            Positioned(
-              bottom: 30,
-              left: 24,
-              right: 24,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0C4A6E)))
+          : RefreshIndicator(
+              onRefresh: _fetchAllData,
+              color: const Color(0xFF0C4A6E),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  const Text('Tổng quan', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF0C4A6E), letterSpacing: -0.5)),
+                  const SizedBox(height: 8),
+                  const Text('Cập nhật hoạt động hệ thống ngày hôm nay.', style: TextStyle(color: Color(0xFF475569), fontSize: 15)),
+                  const SizedBox(height: 32),
+                  
+                  // Top Cards - Dữ liệu thực
+                  Row(
                     children: [
-                      Text('Xin chào, Cú Đêm! \u{1F44B}', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 4),
-                      const Text('Admin Dashboard', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _navigateToUsers,
+                          child: _buildStatCard(
+                            'NGƯỜI DÙNG', 
+                            '$_totalUsers', 
+                            '+12%', 
+                            const Color(0xFF10B981),
+                            true
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _navigateToReports,
+                          child: _buildStatCard(
+                            'BÁO CÁO CHỜ', 
+                            _pendingReports.toString().padLeft(2, '0'), 
+                            'GẤP', 
+                            const Color(0xFFEF4444),
+                            false
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16)),
-                    child: IconButton(
-                      icon: const Icon(Icons.exit_to_app_rounded, color: Colors.white),
-                      onPressed: () => _supabase.auth.signOut(),
-                      tooltip: 'Đăng xuất',
-                    ),
+                  
+                  const SizedBox(height: 40),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text('Hoạt động gần đây', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0C4A6E))),
+                      GestureDetector(
+                        onTap: _navigateToReports,
+                        child: const Text('Xem tất cả', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 16),
+                  
+                  // Activity List - Dữ liệu thực từ Supabase
+                  if (_recentActivities.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.inbox_rounded, size: 48, color: Colors.grey[300]),
+                          const SizedBox(height: 12),
+                          const Text('Chưa có hoạt động nào', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 15)),
+                        ],
+                      ),
+                    )
+                  else
+                    ...List.generate(_recentActivities.length, (index) {
+                      final activity = _recentActivities[index];
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: index < _recentActivities.length - 1 ? 16 : 0),
+                        child: _buildActivityCard(
+                          activity['icon'] as IconData,
+                          activity['iconColor'] as Color,
+                          activity['bgColor'] as Color,
+                          activity['title'] as String,
+                          activity['subtitle'] as String,
+                          activity['time'] as String,
+                          hasButton: true,
+                          btnLabel: activity['btnLabel'] as String,
+                          btnColor: activity['btnColor'] as Color,
+                          btnSolid: activity['btnSolid'] as bool,
+                          onPressed: () => _showActivityDetail(activity),
+                        ),
+                      );
+                    }),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildOverviewCards(int users, int books, int cards, int acts) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.1, 
-      children: [
-        _buildAnimatedStatCard('Người Dùng', users.toString(), Icons.group_rounded, const Color(0xFF10B981)),
-        _buildAnimatedStatCard('Tài Nguyên Sách', books.toString(), Icons.library_books_rounded, const Color(0xFF3B82F6)),
-        _buildAnimatedStatCard('Tổng Flashcard', cards.toString(), Icons.style_rounded, const Color(0xFF8B5CF6)),
-        _buildAnimatedStatCard('Lượt Tương Tác', acts.toString(), Icons.local_fire_department_rounded, const Color(0xFFF59E0B)),
-      ],
-    );
-  }
-
-  Widget _buildAnimatedStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, String badge, Color badgeColor, bool isChart) {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF94A3B8).withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 8)),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 24)),
-              // Icon chỉ báo tăng trưởng
-              Icon(Icons.trending_up_rounded, color: const Color(0xFF10B981).withOpacity(0.7), size: 20),
-            ],
-          ),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), height: 1.0)),
-          const SizedBox(height: 6),
-          Text(title, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChartSection(int act, int flash, int usr) {
-    // Biểu đồ Fake Visual Design (Vì API chỉ trả về con số tổng, ta build UI minh hoạ biểu đồ cột)
-    double maxVal = (act > flash && act > usr) ? act.toDouble() : (flash > usr ? flash.toDouble() : usr.toDouble());
-    if (maxVal == 0) maxVal = 100; // Tránh c/0
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B), // Bảng màu tối sang trọng
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
-        ],
+        boxShadow: [BoxShadow(color: const Color(0xFF94A3B8).withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,50 +465,139 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               const Text('Hoạt động Hệ thống', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-               Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                 child: const Text('Tháng này', style: TextStyle(color: Colors.white70, fontSize: 12)),
-               )
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 1, color: Color(0xFF475569))),
+              if (!isChart)
+                 Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                   decoration: BoxDecoration(color: badgeColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                   child: Text(badge, style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                 ),
             ],
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _buildChartBar('Người dùng', usr, maxVal, const Color(0xFF10B981)),
-              _buildChartBar('Flashcards', flash, maxVal, const Color(0xFF8B5CF6)),
-              _buildChartBar('Tương tác', act, maxVal, const Color(0xFFF59E0B)),
+              Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF0C4A6E), height: 1)),
+              const SizedBox(width: 8),
+              if (isChart)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(badge, style: TextStyle(color: badgeColor, fontSize: 12, fontWeight: FontWeight.w800)),
+                )
             ],
           ),
+          const SizedBox(height: 24),
+          if (isChart)
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               crossAxisAlignment: CrossAxisAlignment.end,
+               children: [
+                 _miniBar(12, badgeColor),
+                 _miniBar(16, badgeColor),
+                 _miniBar(20, badgeColor),
+                 _miniBar(16, badgeColor),
+                 _miniBar(24, badgeColor),
+                 _miniBar(32, badgeColor),
+               ],
+             )
+          else
+             Column(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Stack(
+                   children: [
+                     Container(height: 6, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(4))),
+                     Container(height: 6, width: 80, decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(4))),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 const Text('80% mục tiêu xử lý', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+               ],
+             ),
         ],
       ),
     );
   }
 
-  Widget _buildChartBar(String label, int value, double maxVal, Color color) {
-    final double heightPercent = (value / maxVal).clamp(0.1, 1.0);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(value.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.fastOutSlowIn,
-          height: 120 * heightPercent,
-          width: 45,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(8),
-            gradient: LinearGradient(colors: [color.withOpacity(0.7), color], begin: Alignment.bottomCenter, end: Alignment.topCenter)
+  Widget _miniBar(double height, Color color) {
+    return Container(
+      width: 14,
+      height: height,
+      decoration: BoxDecoration(color: color.withOpacity(height > 20 ? 1 : 0.4), borderRadius: BorderRadius.circular(4)),
+    );
+  }
+
+  Widget _buildActivityCard(
+    IconData icon, Color iconColor, Color bgColor, String title, String subtitle, String time, 
+    {bool hasButton = false, String btnLabel = '', Color btnColor = Colors.white, bool btnSolid = false, VoidCallback? onPressed}
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: const Color(0xFF94A3B8).withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16)),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0C4A6E)))),
+                        Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: const TextStyle(color: Color(0xFF475569), fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-      ],
+          if (hasButton) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: btnSolid
+                 ? ElevatedButton(
+                     onPressed: onPressed,
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: btnColor,
+                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                       elevation: 0,
+                     ),
+                     child: Text(btnLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                   )
+                 : OutlinedButton(
+                     onPressed: onPressed,
+                     style: OutlinedButton.styleFrom(
+                       foregroundColor: btnColor,
+                       side: BorderSide(color: btnColor.withOpacity(0.2)),
+                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                     ),
+                     child: Text(btnLabel, style: TextStyle(color: btnColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                   ),
+            ),
+          ]
+        ],
+      ),
     );
   }
 }
