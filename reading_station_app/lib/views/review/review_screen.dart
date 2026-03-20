@@ -5,6 +5,22 @@ import '../../models/note.dart';
 import 'flashcard_review_screen.dart';
 import 'add_flashcard_screen.dart';
 import '../notes/add_note_screen.dart';
+import '../../providers/note_provider.dart';
+import '../../providers/review_settings_provider.dart';
+import 'deck_detail_widget.dart';
+import 'review_settings_screen.dart';
+
+class SelectedDeckNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+}
+final selectedDeckTitleProvider = NotifierProvider<SelectedDeckNotifier, String?>(SelectedDeckNotifier.new);
+
+class IsDueModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+}
+final isDueModeProvider = NotifierProvider<IsDueModeNotifier, bool>(IsDueModeNotifier.new);
 
 class ReviewScreen extends ConsumerWidget {
   const ReviewScreen({super.key});
@@ -18,6 +34,49 @@ class ReviewScreen extends ConsumerWidget {
     final dueNotesAsync = ref.watch(dueNotesProvider);
     final totalNotesCountAsync = ref.watch(totalNotesCountProvider);
     final memorizedCountAsync = ref.watch(memorizedNotesCountProvider);
+    final streakAsync = ref.watch(streakProvider);
+    final allNotesTopAsync = ref.watch(allNotesProvider);
+    
+    // New Feature: Deck Detail Logic
+    final selectedDeckTitle = ref.watch(selectedDeckTitleProvider);
+    final isDueMode = ref.watch(isDueModeProvider);
+
+    if (selectedDeckTitle != null) {
+      return allNotesTopAsync.when(
+        data: (notes) {
+          // get all flashcards for this book
+          final flashcards = notes.where((n) {
+             // flashcards are those with at least a nextReview timestamp OR question
+             return n.bookTitle == selectedDeckTitle && (n.nextReview != null || (n.question != null && n.question!.isNotEmpty));
+          }).toList();
+          
+          if (flashcards.isEmpty) { // fallback
+            return Scaffold(
+              backgroundColor: _lightBg,
+              appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+              body: const Center(child: Text("Không có thẻ trong bộ này")),
+            );
+          }
+          final firstNote = flashcards.first;
+          
+          return Scaffold(
+            backgroundColor: _lightBg,
+            body: SafeArea(
+              child: DeckDetailWidget(
+                title: selectedDeckTitle,
+                author: firstNote.bookAuthor,
+                imageUrl: firstNote.bookImageUrl,
+                notes: flashcards,
+                isDueMode: isDueMode,
+                onBack: () => ref.read(selectedDeckTitleProvider.notifier).state = null,
+              ),
+            ),
+          );
+        },
+        loading: () => Scaffold(backgroundColor: _lightBg, body: const Center(child: CircularProgressIndicator())),
+        error: (e, __) => Scaffold(backgroundColor: _lightBg, body: Center(child: Text('Lỗi: $e'))),
+      );
+    }
     
     return Scaffold(
       backgroundColor: _lightBg,
@@ -27,6 +86,7 @@ class ReviewScreen extends ConsumerWidget {
              ref.invalidate(dueNotesProvider);
              ref.invalidate(totalNotesCountProvider);
              ref.invalidate(memorizedNotesCountProvider);
+             ref.invalidate(allNotesProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -53,7 +113,9 @@ class ReviewScreen extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ReviewSettingsScreen()));
+                      },
                     ),
                   ],
                 ),
@@ -71,7 +133,13 @@ class ReviewScreen extends ConsumerWidget {
                 // Stats Row
                 Row(
                   children: [
-                    Expanded(child: _buildStatCard('3 ngày', 'CHUỖI', const Color(0xFFFAEDE3), Icons.local_fire_department_rounded, Colors.orange[800]!)),
+                    Expanded(
+                      child: streakAsync.when(
+                        data: (streak) => _buildStatCard('$streak ngày', 'CHUỖI', const Color(0xFFFAEDE3), Icons.local_fire_department_rounded, Colors.orange[800]!),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (_, __) => const Text('Lỗi'),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: memorizedCountAsync.when(
@@ -114,7 +182,7 @@ class ReviewScreen extends ConsumerWidget {
                   data: (notes) {
                     if (notes.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
                           child: Column(
                             children: [
@@ -137,14 +205,20 @@ class ReviewScreen extends ConsumerWidget {
                       children: grouped.entries.map((entry) {
                         final bookNotes = entry.value;
                         final firstNote = bookNotes.first;
-                        return Column(
+                      return Column(
                           children: [
-                            _buildDeckItem(
-                              title: entry.key,
-                              author: firstNote.bookAuthor,
-                              cardCount: bookNotes.length,
-                              imageUrl: firstNote.bookImageUrl,
-                              color: const Color(0xFFF3E5BC),
+                            GestureDetector(
+                              onTap: () {
+                                ref.read(isDueModeProvider.notifier).state = true;
+                                ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
+                              },
+                              child: _buildDeckItem(
+                                title: entry.key,
+                                author: firstNote.bookAuthor,
+                                cardCount: bookNotes.length,
+                                imageUrl: firstNote.bookImageUrl,
+                                color: const Color(0xFFF3E5BC),
+                              ),
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -153,6 +227,75 @@ class ReviewScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const SizedBox(),
+                  error: (_, __) => const SizedBox(),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Bộ thẻ đã tạo Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Bộ thẻ đã tạo',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF1B263B)),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: Text('Xem tất cả', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // List of ALL decks
+                allNotesTopAsync.when(
+                  data: (notes) {
+                    final flashcards = notes.where((n) {
+                       return n.nextReview != null || (n.question != null && n.question!.isNotEmpty);
+                    }).toList();
+
+                    if (flashcards.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: Text('Chưa có bộ thẻ nào được tạo!', style: TextStyle(color: Colors.grey[500])),
+                        ),
+                      );
+                    }
+                    
+                    // Group notes by book
+                    final grouped = <String, List<Note>>{};
+                    for (var note in flashcards) {
+                      grouped.update(note.bookTitle, (list) => list..add(note), ifAbsent: () => [note]);
+                    }
+                    
+                    return Column(
+                      children: grouped.entries.map((entry) {
+                        final bookNotes = entry.value;
+                        final firstNote = bookNotes.first;
+                      return Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                ref.read(isDueModeProvider.notifier).state = false;
+                                ref.read(selectedDeckTitleProvider.notifier).state = entry.key;
+                              },
+                              child: _buildDeckItem(
+                                title: entry.key,
+                                author: firstNote.bookAuthor,
+                                cardCount: bookNotes.length,
+                                imageUrl: firstNote.bookImageUrl,
+                                color: const Color(0xFFE8F1EB), // Light green to differentiate
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      }).toList(),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
                   error: (_, __) => const SizedBox(),
                 ),
                 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_book.dart';
 import '../repositories/library_repository.dart';
+import 'community_provider.dart';
 
 // Provider for the repository
 final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
@@ -35,6 +36,19 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).addBook(userBook);
       ref.invalidate(userBooksProvider);
+
+      String type = 'added_book';
+      if (userBook.status == BookStatus.reading) type = 'started_reading';
+      if (userBook.status == BookStatus.completed) type = 'finished_book';
+
+      ref.read(communityControllerProvider.notifier).postActivity(
+        type: type,
+        bookTitle: userBook.book.title,
+        bookImageUrl: userBook.book.imageUrl,
+        bookAuthor: userBook.book.authors.isNotEmpty ? userBook.book.authors.first : '',
+        rating: userBook.userRating,
+      );
+
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -45,6 +59,16 @@ class LibraryController extends AsyncNotifier<void> {
     try {
       await ref.read(libraryRepositoryProvider).updateBook(updatedBook);
       ref.invalidate(userBooksProvider);
+
+      if (updatedBook.status == BookStatus.completed) {
+        ref.read(communityControllerProvider.notifier).postActivity(
+          type: 'finished_book',
+          bookTitle: updatedBook.book.title,
+          bookImageUrl: updatedBook.book.imageUrl,
+          bookAuthor: updatedBook.book.authors.isNotEmpty ? updatedBook.book.authors.first : '',
+          rating: updatedBook.userRating,
+        );
+      }
     } catch (e) {
       print('Error updating book: $e');
       rethrow;

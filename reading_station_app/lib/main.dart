@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:reading_station_app/views/main_screen.dart'; // From HEAD (We will keep our MainScreen)
 // The remote imported features/library/library_page.dart, but our MainScreen is likely the current source of truth for navigation.
 import 'package:reading_station_app/views/library/library_screen.dart';
+import 'package:reading_station_app/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
     url: 'https://kvechqvsflmmxruikrtt.supabase.co',
     anonKey: 'sb_publishable_Bn9x0JxeSONUEDX_ItvyJQ__9hwuUMT',
   );
+
+  // Initialize Notification Service
+  await NotificationService().init();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.dark));
   runApp(const ProviderScope(child: MyApp()));

@@ -4,6 +4,8 @@ import '../models/note.dart';
 import '../repositories/note_repository.dart';
 import 'review_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'community_provider.dart';
+import 'library_provider.dart';
 
 // Provider for the repository
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
@@ -49,6 +51,17 @@ class NoteController extends AsyncNotifier<void> {
       ref.invalidate(allNotesProvider);
       ref.invalidate(bookNotesProvider(userBookId));
       
+      // Attempt to get book info for the activity feed
+      final books = ref.read(userBooksProvider).asData?.value ?? [];
+      final book = books.where((b) => b.id == userBookId).firstOrNull;
+
+      ref.read(communityControllerProvider.notifier).postActivity(
+        type: 'created_note',
+        noteContent: content,
+        notePage: pageNumber,
+        bookTitle: book?.book.title,
+      );
+
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

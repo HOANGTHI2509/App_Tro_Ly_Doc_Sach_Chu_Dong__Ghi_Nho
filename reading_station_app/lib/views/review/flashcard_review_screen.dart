@@ -18,6 +18,7 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
   int _currentIndex = 0;
   bool _isFlipped = false;
   bool _isFinished = false;
+  DateTime? _startTime;
 
   final Color _primaryGreen = const Color(0xFF568164);
   final Color _bgColor = const Color(0xFFF9F7F2); // Màu nền kem nhạt của ảnh
@@ -25,6 +26,7 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
   @override
   void initState() {
     super.initState();
+    _startTime = DateTime.now();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
@@ -53,7 +55,31 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
     if (!_isFlipped) return; // Chỉ cho phép đánh giá sau khi đã lật thẻ
 
     final note = widget.notes[_currentIndex];
-    await ref.read(reviewNotifierProvider.notifier).reviewCard(note, quality);
+    final newInterval = await ref.read(reviewNotifierProvider.notifier).reviewCard(note, quality);
+
+    if (mounted) {
+      String message = '';
+      if (quality <= 2) {
+         message = 'Cố gắng lên! Chúng ta sẽ ôn thẻ này vào ngày mai.';
+      } else if (quality == 3) {
+         message = 'Rất tốt! Bạn sẽ gặp lại thẻ này sau $newInterval ngày.';
+      } else if (quality == 4) {
+         message = 'Tuyệt vời! Bạn sẽ gặp lại thẻ này sau $newInterval ngày.';
+      } else {
+         message = 'Xuất sắc! Hẹn gặp lại thẻ này sau $newInterval ngày.';
+      }
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: _primaryGreen,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
 
     if (_currentIndex < widget.notes.length - 1) {
       setState(() {
@@ -211,20 +237,20 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
                   const SizedBox(height: 20),
 
                   // Rating Buttons Grid
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 2.3,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildRatingButton('Rất khó', '😫', 0),
-                      _buildRatingButton('Khó', '😕', 2),
-                      _buildRatingButton('Dễ', '😊', 4),
-                      _buildRatingButton('Rất dễ', '😁', 5),
-                    ],
-                  ),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 2.3,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildRatingButton('Rất khó', '😫', 0, currentNote),
+                        _buildRatingButton('Khó', '😕', 3, currentNote),
+                        _buildRatingButton('Dễ', '😊', 4, currentNote),
+                        _buildRatingButton('Rất dễ', '😁', 5, currentNote),
+                      ],
+                    ),
                   const SizedBox(height: 24),
                   
                   // Footer
@@ -360,8 +386,36 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
     );
   }
 
-  Widget _buildRatingButton(String label, String emoji, int quality) {
+  int _simulateInterval(Note note, int q) {
+    if (q < 3) return 1;
+    double newEaseFactor = note.easeFactor;
+    int newInterval = note.interval;
+    int newRepetitionCount = note.repetitionCount;
+
+    if (newRepetitionCount == 0) {
+       if (q == 3) return 2;
+       if (q == 4) return 3;
+       return 5;
+    } else if (newRepetitionCount == 1) {
+       if (q == 3) return 4;
+       if (q == 4) return 6;
+       return 8;
+    } else {
+       if (q == 3) newInterval = (newInterval * newEaseFactor * 0.8).round();
+       else if (q == 4) newInterval = (newInterval * newEaseFactor).round();
+       else newInterval = (newInterval * newEaseFactor * 1.3).round();
+    }
+    
+    if (newInterval <= note.interval) {
+       newInterval = note.interval + 1;
+    }
+    return newInterval;
+  }
+
+  Widget _buildRatingButton(String label, String emoji, int quality, Note note) {
     bool enabled = _isFlipped;
+    final simulatedInterval = _simulateInterval(note, quality);
+
     return InkWell(
       onTap: enabled ? () => _answer(quality) : null,
       borderRadius: BorderRadius.circular(16),
@@ -385,6 +439,15 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
                   color: Colors.black54,
                 ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                '$simulatedInterval ngày',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: _primaryGreen,
+                ),
+              ),
             ],
           ),
         ),
@@ -393,31 +456,178 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
   }
 
   Widget _buildFinishScreen() {
+    final streakAsync = ref.watch(streakProvider);
+    final weekDaysAsync = ref.watch(weeklyStudyDaysProvider);
+    final int cardsReviewed = widget.notes.length;
+    final int studyMinutes = max(1, DateTime.now().difference(_startTime!).inMinutes);
+
     return Scaffold(
       backgroundColor: _bgColor,
-      body: Center(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Color(0xFF568164)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Daily Goal Met',
+          style: TextStyle(color: Color(0xFF568164), fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Serif'),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(40.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: _primaryGreen.withOpacity(0.1), shape: BoxShape.circle),
-                child: Icon(Icons.celebration_rounded, size: 80, color: _primaryGreen),
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: _primaryGreen.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.celebration_rounded, size: 40, color: _primaryGreen),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Chúc mừng bạn!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Serif',
+                  color: Color(0xFF2C3E35),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Bạn đã hoàn thành tất cả nhiệm vụ ôn tập\nhôm nay.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54, fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 32),
-              const Text(
-                'Xuất sắc!',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Serif'),
+
+              // Streak section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2EFEB),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        streakAsync.when(
+                          data: (streak) => Text(
+                            '$streak NGÀY LIÊN TIẾP',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange[800],
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          loading: () => const Text('ĐANG TẢI...'),
+                          error: (_, __) => const Text('LỖI'),
+                        ),
+                        const Text(
+                          'Tuần này',
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    weekDaysAsync.when(
+                      data: (weekDays) {
+                        final now = DateTime.now();
+                        final currentWeekday = now.weekday; // 1 to 7
+
+                        // Cập nhật chắc chắn hôm nay là true vì người dùng vừa hoàn thành
+                        List<bool> updatedWeekDays = List.from(weekDays);
+                        updatedWeekDays[currentWeekday - 1] = true;
+
+                        List<Widget> dayWidgets = [];
+                        final labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+                        
+                        for (int i = 0; i < 7; i++) {
+                          bool isToday = (i + 1) == currentWeekday;
+                          dayWidgets.add(
+                            _buildDayItem(isToday ? 'HÔM NAY' : labels[i], updatedWeekDays[i], isToday)
+                          );
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: dayWidgets,
+                        );
+                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (_, __) => const Text('Lỗi tải dữ liệu tuần'),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Bạn đã hoàn thành tất cả các thẻ của ngày hôm nay. Kiến thức đang dần được khắc sâu!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, fontSize: 16, height: 1.5),
+
+              // Stats Row: Thẻ đã ôn and Phút học
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.style, color: Colors.orange[800], size: 24),
+                          const SizedBox(height: 12),
+                          Text(
+                            '$cardsReviewed',
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E35)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text('thẻ đã ôn', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.access_time_filled, color: _primaryGreen, size: 24),
+                          const SizedBox(height: 12),
+                          Text(
+                            '$studyMinutes',
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E35)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text('phút học', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
+
+              // Nút về trang chủ
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -425,11 +635,11 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryGreen,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     elevation: 0,
                   ),
                   child: const Text(
-                    'Quay lại Trạm Đọc',
+                    'Quay lại',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                   ),
                 ),
@@ -438,6 +648,68 @@ class _FlashcardReviewScreenState extends ConsumerState<FlashcardReviewScreen> w
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDayItem(String defaultLabel, bool isActive, bool forceHighlight) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: forceHighlight ? 50 : 36,
+              height: forceHighlight ? 50 : 36,
+              decoration: BoxDecoration(
+                color: forceHighlight ? const Color(0xFFEBEFEB) : Colors.transparent, 
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.local_fire_department,
+                color: isActive ? _primaryGreen : Colors.grey[350],
+                size: forceHighlight ? 30 : 22,
+              ),
+            ),
+            if (isActive)
+              Positioned(
+                top: forceHighlight ? -6 : -4,
+                right: forceHighlight ? -2 : -6,
+                child: Container(
+                  width: 14,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: forceHighlight ? _primaryGreen : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: forceHighlight ? [] : [
+                       BoxShadow(
+                         color: Colors.black.withOpacity(0.05),
+                         blurRadius: 4,
+                       )
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.check, 
+                    color: forceHighlight ? Colors.white : _primaryGreen, 
+                    size: 10,
+                    weight: 900,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          defaultLabel,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: forceHighlight ? FontWeight.bold : FontWeight.w600,
+            color: forceHighlight ? _primaryGreen : Colors.grey[500],
+          ),
+        ),
+      ],
     );
   }
 }

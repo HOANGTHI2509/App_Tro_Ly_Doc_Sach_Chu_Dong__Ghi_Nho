@@ -26,6 +26,18 @@ final memorizedNotesCountProvider = FutureProvider<int>((ref) async {
   return repository.getMemorizedNotesCount();
 });
 
+// FutureProvider for streak count
+final streakProvider = FutureProvider<int>((ref) async {
+  final repository = ref.watch(reviewRepositoryProvider);
+  return repository.getStreakCount();
+});
+
+// FutureProvider for weekly study days
+final weeklyStudyDaysProvider = FutureProvider<List<bool>>((ref) async {
+  final repository = ref.watch(reviewRepositoryProvider);
+  return repository.getStudyDaysOfCurrentWeek();
+});
+
 // State for Review Session
 class ReviewSessionState {
   final List<Note> dueNotes;
@@ -68,7 +80,7 @@ class ReviewNotifier extends AsyncNotifier<ReviewSessionState> {
 
   /// SM-2 implementation for updating card review status
   /// q: 0-5 (0 is Again/Blackout, 5 is Perfect)
-  Future<void> reviewCard(Note note, int q) async {
+  Future<int> reviewCard(Note note, int q) async {
     final now = DateTime.now();
     double newEaseFactor = note.easeFactor;
     int newInterval = note.interval;
@@ -77,12 +89,23 @@ class ReviewNotifier extends AsyncNotifier<ReviewSessionState> {
     if (q >= 3) {
       // Success case
       if (newRepetitionCount == 0) {
-        newInterval = 1;
+         if (q == 3) { newInterval = 2; }
+         else if (q == 4) { newInterval = 3; }
+         else { newInterval = 5; }
       } else if (newRepetitionCount == 1) {
-        newInterval = 6;
+         if (q == 3) { newInterval = 4; }
+         else if (q == 4) { newInterval = 6; }
+         else { newInterval = 8; }
       } else {
-        newInterval = (newInterval * newEaseFactor).round();
+         if (q == 3) { newInterval = (newInterval * newEaseFactor * 0.8).round(); }
+         else if (q == 4) { newInterval = (newInterval * newEaseFactor).round(); }
+         else { newInterval = (newInterval * newEaseFactor * 1.3).round(); }
       }
+      // Ensure it always grows
+      if (newInterval <= note.interval) {
+         newInterval = note.interval + 1;
+      }
+
       newRepetitionCount++;
       
       // Update EF: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
@@ -113,8 +136,13 @@ class ReviewNotifier extends AsyncNotifier<ReviewSessionState> {
       
       // Invalidate providers
       ref.invalidate(dueNotesProvider);
+      ref.invalidate(streakProvider);
+      ref.invalidate(weeklyStudyDaysProvider);
+      ref.invalidate(memorizedNotesCountProvider);
+      return newInterval;
     } catch (e) {
       print('ReviewNotifier error: $e');
+      return 1; // Default fallback
     }
   }
 }

@@ -5,6 +5,8 @@ import '../providers/review_provider.dart';
 import 'library/library_screen.dart';
 import 'notes/notes_screen.dart';
 import 'review/review_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/review_settings_provider.dart';
 import 'community/community_screen.dart';
 import 'profile/profile_screen.dart';
 
@@ -36,6 +38,166 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     (icon: Icons.people, label: 'Cộng đồng'),
     (icon: Icons.person, label: 'Cá nhân'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowMorningPopup();
+    });
+  }
+
+  Future<void> _checkAndShowMorningPopup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
+      final lastShownDate = prefs.getString('last_morning_popup_date');
+      
+      if (lastShownDate == todayStr) return; 
+
+      final settings = await ref.read(reviewSettingsProvider.future);
+      final timeStr = settings.notificationTime; // "08:00 AM"
+      
+      final parts = timeStr.split(' ');
+      if (parts.isEmpty) return;
+      final hm = parts[0].split(':');
+      int h = int.parse(hm[0]);
+      int m = int.parse(hm[1]);
+      if (parts.length > 1) {
+        if (parts[1] == 'PM' && h < 12) h += 12;
+        if (parts[1] == 'AM' && h == 12) h = 0;
+      }
+      
+      final now = DateTime.now();
+      final notifTime = DateTime(now.year, now.month, now.day, h, m);
+      
+      if (now.isAfter(notifTime) || now.isAtSameMomentAs(notifTime)) {
+        final notes = await ref.read(dueNotesProvider.future);
+        if (notes.isNotEmpty) {
+          await prefs.setString('last_morning_popup_date', todayStr);
+          if (!mounted) return;
+          _showMorningPopup(notes.length);
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _showMorningPopup(int count) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF7F2),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFE5D5C5), Color(0xFFD6C8B8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.local_fire_department, color: Color(0xFF8B6B4A), size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B6B4A),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Consumer(builder: (context, cRef, _) {
+                          final streakAsync = cRef.watch(streakProvider);
+                          final val = streakAsync.asData?.value ?? 0;
+                          return Text('STREAK: $val NGÀY', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5));
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Chào buổi sáng,\nOakley!',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Serif', color: Color(0xFF2C3E35), height: 1.2),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Text.rich(
+                        TextSpan(
+                          text: 'Hôm nay bạn có ',
+                          style: const TextStyle(color: Colors.black87, fontSize: 15, height: 1.5),
+                          children: [
+                            TextSpan(text: '$count thẻ', style: const TextStyle(color: Color(0xFF568164), fontWeight: FontWeight.bold)),
+                            const TextSpan(text: ' cần ôn tập để duy trì chuỗi ngày học tập.'),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _onItemTapped(2);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF568164),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          ),
+                          child: const Text('Bắt đầu ôn tập ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey[300]!, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          ),
+                          child: const Text('Để sau', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
 
   void _onItemTapped(int index) {
     ref.read(navProvider.notifier).setIndex(index);
