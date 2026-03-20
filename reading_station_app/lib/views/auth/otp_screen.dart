@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../controllers/auth_controller.dart';
+import 'reset_password_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
-  const OtpScreen({super.key, required this.email});
+  final OtpType type;
+  const OtpScreen({super.key, required this.email, this.type = OtpType.signup});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -26,13 +29,27 @@ class _OtpScreenState extends State<OtpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await _authController.verifyOTP(email: widget.email, token: otp);
+      await _authController.verifyOTP(
+        email: widget.email, 
+        token: otp, 
+        type: widget.type,
+      );
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Xác thực thành công!')),
-        );
-        // Navigate to main screen
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (widget.type == OtpType.recovery) {
+          // Navigate to Reset Password screen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => ResetPasswordScreen(email: widget.email),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Xác thực thành công!')),
+          );
+          // Navigate to main screen
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     } catch (e) {
        if (mounted) {

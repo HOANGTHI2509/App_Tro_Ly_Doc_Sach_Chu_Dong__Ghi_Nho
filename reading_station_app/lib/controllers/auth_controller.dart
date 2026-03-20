@@ -56,18 +56,44 @@ class AuthController {
     }
   }
 
-  // Verify OTP for signup
-  Future<void> verifyOTP({required String email, required String token}) async {
+  // Verify OTP for signup or recovery
+  Future<void> verifyOTP({
+    required String email, 
+    required String token, 
+    OtpType type = OtpType.signup,
+  }) async {
     try {
       await _auth.verifyOTP(
         email: email,
         token: token,
-        type: OtpType.signup,
+        type: type,
       );
     } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
       throw 'Mã xác minh không hợp lệ hoặc đã hết hạn.';
+    }
+  }
+
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.resetPasswordForEmail(email);
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Đã xảy ra lỗi khi gửi yêu cầu. Vui lòng thử lại.';
+    }
+  }
+
+  // Update password (after OTP verification, the user has a temporary session)
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _auth.updateUser(UserAttributes(password: newPassword));
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Đã xảy ra lỗi khi cập nhật mật khẩu.';
     }
   }
 

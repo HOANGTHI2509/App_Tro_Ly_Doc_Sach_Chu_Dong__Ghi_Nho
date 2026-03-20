@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../controllers/auth_controller.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -132,7 +133,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                          );
+                        },
+                        child: const Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(color: Color(0xFFFF5722), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
 
                     // Login/Register Buttons Row
                     Container(
