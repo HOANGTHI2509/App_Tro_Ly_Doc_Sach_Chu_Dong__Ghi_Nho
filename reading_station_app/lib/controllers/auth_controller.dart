@@ -56,6 +56,21 @@ class AuthController {
     }
   }
 
+  // Verify OTP for signup
+  Future<void> verifyOTP({required String email, required String token}) async {
+    try {
+      await _auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.signup,
+      );
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Mã xác minh không hợp lệ hoặc đã hết hạn.';
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();

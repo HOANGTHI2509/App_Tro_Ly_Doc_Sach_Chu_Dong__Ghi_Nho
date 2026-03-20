@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../controllers/auth_controller.dart';
 import 'login_screen.dart';
+import 'otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,8 +55,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       
       if (mounted) {
-        // Pop all routes and go to main wrapper (which shows home because we are logged in)
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Navigate to OTP verification screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(email: _emailController.text.trim()),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
