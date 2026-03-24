@@ -239,11 +239,8 @@ class _AdminSupportScreenState extends State<AdminSupportScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         flexibleSpace: Container(color: const Color(0xFFF8FAFC)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0C4A6E)),
-          onPressed: () => Navigator.pop(context),
-        ),
         elevation: 0,
         actions: [
           IconButton(

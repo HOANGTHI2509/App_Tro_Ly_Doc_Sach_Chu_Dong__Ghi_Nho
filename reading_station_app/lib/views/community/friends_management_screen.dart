@@ -247,6 +247,7 @@ class FriendsManagementScreen extends ConsumerWidget {
                 height: 160, // Increased height to prevent overflow
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     return Padding(

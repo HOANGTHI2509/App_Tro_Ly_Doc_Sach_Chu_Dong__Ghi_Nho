@@ -182,28 +182,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: GestureDetector(
-                          onTap: _navigateToUsers,
-                          child: _buildStatCard(
-                            'NGƯỜI DÙNG', 
-                            '$_totalUsers', 
-                            '+', 
-                            const Color(0xFF10B981),
-                            true
-                          ),
+                        child: _buildStatCard(
+                          'NGƯỜI DÙNG', 
+                          '$_totalUsers', 
+                          '+', 
+                          const Color(0xFF10B981),
+                          true
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: GestureDetector(
-                          onTap: _navigateToSupport,
-                          child: _buildStatCard(
-                            'YÊU CẦU HỖ TRỢ', 
-                            _pendingSupportTickets.toString().padLeft(2, '0'), 
-                            'CHỜ DUYỆT', 
-                            const Color(0xFFEA580C),
-                            false
-                          ),
+                        child: _buildStatCard(
+                          'YÊU CẦU HỖ TRỢ', 
+                          _pendingSupportTickets.toString().padLeft(2, '0'), 
+                          'CHỜ DUYỆT', 
+                          const Color(0xFFEA580C),
+                          false
                         ),
                       ),
                     ],

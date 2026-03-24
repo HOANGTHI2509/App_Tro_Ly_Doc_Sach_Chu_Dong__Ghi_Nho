@@ -247,6 +247,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                         ),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(
                           children: dynamicFilters.map((filter) {

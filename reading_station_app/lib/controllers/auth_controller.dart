@@ -16,6 +16,10 @@ class AuthController {
         email: email,
         password: password,
       );
+      // Giới hạn 1 thiết bị/thời điểm: Đăng xuất toàn bộ các phiên đăng nhập ở thiết bị khác
+      try {
+        await _auth.signOut(scope: SignOutScope.others);
+      } catch (_) {}
     } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {

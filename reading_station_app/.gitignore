@@ -60,3 +60,4 @@ macos/Runner/GoogleService-Info.plist
 # Temp files
 *.tmp
 *.bak
+*.apk

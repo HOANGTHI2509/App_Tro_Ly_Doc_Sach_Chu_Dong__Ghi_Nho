@@ -558,11 +558,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFC),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         flexibleSpace: Container(color: const Color(0xFFF9FAFC)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0C4A6E)),
-          onPressed: () => Navigator.pop(context),
-        ),
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0C4A6E)), onPressed: _fetchUsers),

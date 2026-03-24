@@ -4,6 +4,7 @@ import '../../models/user_book.dart';
 import '../../providers/library_provider.dart';
 import 'scanner/scanner_screen.dart';
 import 'search_book_screen.dart';
+import 'manual_add_book_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../providers/user_profile_provider.dart';
 import 'widgets/book_item.dart';
@@ -116,7 +117,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                 iconColor: const Color(0xFFFA6400),
                 onTap: () {
                     Navigator.pop(context);
-                    // Handle manual add
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ManualAddBookScreen()));
                 }
               ),
 
