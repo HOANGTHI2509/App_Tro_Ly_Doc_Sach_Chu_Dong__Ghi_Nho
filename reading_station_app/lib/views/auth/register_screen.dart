@@ -234,51 +234,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
               ),
 
-              const SizedBox(height: 40),
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('HOẶC ĐĂNG KÝ BẰNG', style: TextStyle(color: Color(0xFF757575), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Social Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: Image.network('https://img.icons8.com/color/48/000000/google-logo.png', width: 20, height: 20),
-                      label: const Text('Google', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.facebook, color: Colors.blue, size: 24),
-                      label: const Text('Facebook', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
 
               const SizedBox(height: 48),
               Row(

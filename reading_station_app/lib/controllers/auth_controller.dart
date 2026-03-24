@@ -61,15 +61,54 @@ class AuthController {
     await _auth.signOut();
   }
 
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.resetPasswordForEmail(email);
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Đã xảy ra lỗi khi gửi email xác minh.';
+    }
+  }
+
+  // Verify OTP
+  Future<void> verifyOTP({required String email, required String token, required OtpType type}) async {
+    try {
+      await _auth.verifyOTP(
+        email: email,
+        token: token,
+        type: type,
+      );
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Mã xác minh không hợp lệ hoặc đã hết hạn.';
+    }
+  }
+
+  // Update password
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } on AuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Không thể cập nhật mật khẩu lúc này.';
+    }
+  }
+
   // Helper to handle Supabase Auth messages in Vietnamese
   String _handleAuthException(AuthException e) {
     final msg = e.message.toLowerCase();
-    if (msg.contains('invalid login credentials')) {
-      return 'Email hoặc mật khẩu không chính xác.';
+    if (msg.contains('invalid login') || msg.contains('invalid email') || msg.contains('wrong password') || msg.contains('credentials')) {
+      return 'Email hoặc mật khẩu không chính xác. Hoặc tài khoản chưa tồn tại.';
     } else if (msg.contains('already registered')) {
       return 'Email này đã được sử dụng bởi tài khoản khác.';
     } else if (msg.contains('password')) {
-      return 'Mật khẩu không đáp ứng yêu cầu an toàn.';
+      return 'Mật khẩu quá ngắn hoặc không đáp ứng yêu cầu an toàn.';
     }
     return 'Đã xảy ra lỗi: ${e.message}';
   }

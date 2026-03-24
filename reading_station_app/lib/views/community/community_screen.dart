@@ -6,7 +6,7 @@ import 'friends_management_screen.dart';
 import 'pending_requests_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'comments_bottom_sheet.dart';
-
+import '../../providers/user_profile_provider.dart';
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
 
@@ -66,18 +66,22 @@ class CommunityScreen extends ConsumerWidget {
           ),
           Consumer(
             builder: (context, ref, child) {
-              final user = Supabase.instance.client.auth.currentUser;
-              final userName = user?.userMetadata?['name'] ?? 'User';
-              final avatarUrl = user?.userMetadata?['avatar_url'];
+              final profileAsync = ref.watch(userProfileProvider);
+              final String? avatarUrl = profileAsync.value?['avatar_url'];
+              final String name = profileAsync.value?['name'] ?? 'A';
 
               return Padding(
                 padding: const EdgeInsets.only(right: 16.0, left: 8.0),
                 child: CircleAvatar(
-                  backgroundColor: const Color(0xFFF5B08C),
-                  radius: 18,
-                  backgroundImage: avatarUrl != null 
-                      ? NetworkImage(avatarUrl) 
-                      : NetworkImage('https://ui-avatars.com/api/?name=$userName&background=random'),
+                  radius: 17,
+                  backgroundColor: _primaryGreen,
+                  backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+                  child: (avatarUrl == null || avatarUrl.isEmpty)
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        )
+                      : null,
                 ),
               );
             },

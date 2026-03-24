@@ -9,6 +9,7 @@ import '../../providers/note_provider.dart';
 import '../../providers/review_settings_provider.dart';
 import 'deck_detail_widget.dart';
 import 'review_settings_screen.dart';
+import '../../providers/user_profile_provider.dart';
 
 class SelectedDeckNotifier extends Notifier<String?> {
   @override
@@ -40,6 +41,9 @@ class ReviewScreen extends ConsumerWidget {
     // New Feature: Deck Detail Logic
     final selectedDeckTitle = ref.watch(selectedDeckTitleProvider);
     final isDueMode = ref.watch(isDueModeProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final String? avatarUrl = profileAsync.value?['avatar_url'];
+    final String name = profileAsync.value?['name'] ?? 'A';
 
     if (selectedDeckTitle != null) {
       return allNotesTopAsync.when(
@@ -101,24 +105,42 @@ class ReviewScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
+                      Builder(
+                        builder: (context) => IconButton(
+                          icon: const Icon(Icons.menu, color: Color(0xFF2C3E35)),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                        ),
                       ),
                       Text(
                         'Ôn tập',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: _primaryGreen,
                           fontFamily: 'Serif',
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReviewSettingsScreen()));
-                        },
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const ReviewSettingsScreen()));
+                            },
+                          ),
+                          CircleAvatar(
+                            radius: 17,
+                            backgroundColor: _primaryGreen,
+                            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+                            child: (avatarUrl == null || avatarUrl.isEmpty)
+                                ? Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  )
+                                : null,
+                          ),
+                        ]
                       ),
                     ],
                   ),
